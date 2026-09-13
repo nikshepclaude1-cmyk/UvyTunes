@@ -7,6 +7,9 @@ gradle-app.setting
 !gradle-wrapper.jar
 !gradle-wrapper.properties
 
+# Local
+*.zip
+
 # Local configuration file (SDK path, etc.)
 local.properties
 
