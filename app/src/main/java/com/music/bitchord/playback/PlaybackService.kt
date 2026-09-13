@@ -886,7 +886,7 @@ class PlaybackService : MediaLibraryService() {
                     .build()
             }
             // SHORTS mode: iTunes search URI → preview URL
-            if (dataSpec.uri.authority == "itunes") {
+            if (dataSpec.uri.scheme == "itunes") {
                 val title = dataSpec.uri.getQueryParameter("t").orEmpty()
                 val artist = dataSpec.uri.getQueryParameter("a").orEmpty()
                 val album = dataSpec.uri.getQueryParameter("l").orEmpty().ifBlank { null }
