@@ -2155,6 +2155,13 @@ fun NowPlayingScreen(
             val transitionWindow by AppSettings.smartTransitionWindow.collectAsStateWithLifecycle()
             // SHORTS / MAX mode toggle
             val playbackMode by AppSettings.playbackMode.collectAsStateWithLifecycle()
+            var previousMode by remember { mutableStateOf(playbackMode) }
+            LaunchedEffect(playbackMode) {
+                if (previousMode != playbackMode && positionMs > 0) {
+                    onSeek(positionMs)
+                }
+                previousMode = playbackMode
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

@@ -432,10 +432,13 @@ fun Song.toMediaItem(): MediaItem {
         // Auto. Everything downstream reads the item's URI and nothing reads
         // the preference, so this is the only place it has to be said.
         OriginalVersion.isPinned(videoId) -> directYouTubeUri()
-        // A mode-agnostic smart URI. The resolver checks the live playback
-        // mode at resolve time, so switching SHORTS<->MAX takes effect on
-        // the very next track (or even mid-track on re-resolve).
-        else -> smartUri()
+        // The same three fields, for the same reason, on the YouTube path: a
+        // source ranked above YouTube gets offered this track before YouTube
+        // resolves it — see [SourceResolver.substituteForYouTube] — and a
+        // match is made on them, which the loader thread has no other way to
+        // reach. The resolver checks the live playback mode and routes to
+        // iTunes (SHORTS) or the full source pipeline (MAX).
+        else -> "bitchord://watch?v=$videoId${matchQuery()}"
     }
     return MediaItem.Builder()
         .setMediaId(videoId)
@@ -521,17 +524,6 @@ private fun Song.directYouTubeUri(): String =
     "bitchord://watch?v=$videoId${matchQuery()}&$DIRECT_YOUTUBE_PARAMETER=1&q=original"
 
 /**
- * Build a mode-agnostic smart URI. The resolver checks the live playback
- * mode at resolve time and routes to YouTube (MAX) or iTunes (SHORTS).
- */
-fun Song.smartUri(): String {
-    val encodedTitle = Uri.encode(title)
-    val encodedArtist = Uri.encode(artist)
-    val encodedAlbum = Uri.encode(albumName.orEmpty())
-    return "bitchord://smart?v=$videoId&t=$encodedTitle&a=$encodedArtist&l=$encodedAlbum${matchQuery()}"
-}
-
-/**
  * Build an iTunes search URI for SHORTS mode.
  *
  * The resolver will call [com.music.bitchord.data.ITunesSearchApi] to find
@@ -541,6 +533,7 @@ fun Song.itunesSearchUri(): String {
     val encodedTitle = Uri.encode(title)
     val encodedArtist = Uri.encode(artist)
     val encodedAlbum = Uri.encode(albumName.orEmpty())
+    return "itunes://search?t=$encodedTitle&a=$encodedArtist&l=$encodedAlbum&v=$videoId"
     return "itunes://search?t=$encodedTitle&a=$encodedArtist&l=$encodedAlbum&v=$videoId"
 }
 
