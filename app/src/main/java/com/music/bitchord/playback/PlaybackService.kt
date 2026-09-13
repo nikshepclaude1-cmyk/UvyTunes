@@ -902,6 +902,34 @@ class PlaybackService : MediaLibraryService() {
                     .setUri(Uri.parse(previewUrl))
                     .build()
             }
+            // Smart URI: mode-agnostic, routes based on LIVE playback mode
+            if (dataSpec.uri.host == "smart") {
+                val videoId = dataSpec.uri.getQueryParameter("v").orEmpty()
+                val title = dataSpec.uri.getQueryParameter("t").orEmpty()
+                val artist = dataSpec.uri.getQueryParameter("a").orEmpty()
+                val album = dataSpec.uri.getQueryParameter("l").orEmpty().ifBlank { null }
+                val currentMode = com.music.bitchord.data.settings.AppSettings.playbackMode.value
+                if (currentMode == com.music.bitchord.data.settings.PlaybackMode.SHORTS) {
+                    // SHORTS: route to iTunes preview
+                    val iTunesResult = runBlocking(about) {
+                        withTimeout(RESOLVE_TIMEOUT_MS) {
+                            com.music.bitchord.data.ITunesSearchApi.search(title, artist, album)
+                        }
+                    }
+                    val previewUrl = iTunesResult?.previewUrl
+                        ?: throw java.io.IOException("iTunes: no matching track for '$artist - $title'")
+                    TrackLog.d("BitChord", "serving iTunes preview for '$artist - $title'", about = title)
+                    return@Resolver dataSpec.buildUpon()
+                        .setUri(Uri.parse(previewUrl))
+                        .build()
+                }
+                // MAX: fall through to normal YouTube resolution below
+                // Rewrite URI to the standard YouTube format the rest of the
+                // resolver understands.
+                return@Resolver dataSpec.buildUpon()
+                    .setUri(Uri.parse("bitchord://watch?v=$videoId"))
+                    .build()
+            }
             val videoId = dataSpec.uri.getQueryParameter("v")
                 ?: return@Resolver dataSpec
             // An explicit rollback is not a preference for a different

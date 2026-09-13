@@ -1,7 +1,6 @@
 package com.music.bitchord.ui
 
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.music.bitchord.R
@@ -14,7 +13,6 @@ import com.music.bitchord.auth.adjacentProfile
 import com.music.bitchord.data.AppUpdateChecker
 import com.music.bitchord.data.LocalMediaRepository
 import com.music.bitchord.data.LikeState
-import com.music.bitchord.data.UvyTunesHomeApi
 import com.music.bitchord.data.YtMusicRepository
 import com.music.bitchord.data.lyrics.EmbeddedLyrics
 import com.music.bitchord.data.lyrics.LyricLine
@@ -1258,16 +1256,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     } finally {
                         homeShelfRequestSettled(identity, generation)
                     }
-                }
-            }
-            launch {
-                try {
-                    val indianShelves = UvyTunesHomeApi.fetchIndianPlaylists()
-                    if (isCurrentHomeLoad(identity, generation) && indianShelves.isNotEmpty()) {
-                        publishHomeShelves(indianShelves)
-                    }
-                } catch (e: Exception) {
-                    Log.e("MainViewModel", "Indian playlists failed: ${e.message}")
                 }
             }
         }
