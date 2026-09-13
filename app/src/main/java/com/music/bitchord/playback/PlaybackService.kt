@@ -87,6 +87,7 @@ import com.music.bitchord.data.scrobbling.ListenBrainzManager
 import com.music.bitchord.data.scrobbling.ScrobbleManager
 import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.data.settings.OutputPcmMode
+import com.music.bitchord.data.settings.PlaybackMode
 import com.music.bitchord.data.sources.SourceResolver
 import com.music.bitchord.data.sources.SourceStream
 import com.music.bitchord.data.sources.StreamFormat
@@ -1993,6 +1994,53 @@ class PlaybackService : MediaLibraryService() {
      *   back to. Returning true there would be a swap that fixes nothing, on a
      *   loop.
      */
+    /**
+     * Reopens the current track so the stream resolver runs again under the
+     * new [PlaybackMode]. Mode is read at resolve time, not when the queue
+     * entry is built, so toggling MAX/SHORTS without replacing the item leaves
+     * the old bytes playing from cache.
+     */
+    private fun restreamForPlaybackMode(player: ExoPlayer, mode: PlaybackMode) {
+        val index = player.currentMediaItemIndex
+        if (index == C.INDEX_UNSET) return
+        val item = player.getMediaItemAt(index)
+        val uri = item.localConfiguration?.uri ?: return
+        val scheme = uri.scheme
+        if (scheme == "file" || scheme == "content" || uri.authority == "source") return
+
+        val mediaId = item.mediaId
+        val position = player.currentPosition
+        val wasPlaying = player.isPlaying
+
+        scope.launch {
+            AudioCache.cancel()
+            withContext(Dispatchers.IO) { AudioCache.discard(uri) }
+            withContext(Dispatchers.Main) {
+                if (player.currentMediaItemIndex != index ||
+                    player.currentMediaItem?.mediaId != mediaId
+                ) {
+                    return@withContext
+                }
+                if (crossfade?.isTransitioning() == true) return@withContext
+
+                QualityUpgrade.forget(mediaId)
+                StreamChoice.forget(mediaId)
+                NerdStats.clearDeclared(mediaId)
+
+                player.replaceMediaItem(index, item.toSong().toMediaItem())
+                val seekTo = if (mode == PlaybackMode.SHORTS) {
+                    position.coerceAtMost(SHORTS_PREVIEW_MAX_POSITION_MS)
+                } else {
+                    position
+                }
+                player.seekTo(index, seekTo)
+                player.prepare()
+                if (wasPlaying) player.play()
+                TrackLog.d("BitChord", "restreamed $mediaId for $mode mode", about = mediaId)
+            }
+        }
+    }
+
     private fun restreamMissingLocalFile(
         player: ExoPlayer,
         item: MediaItem,
@@ -3910,6 +3958,11 @@ class PlaybackService : MediaLibraryService() {
         scope.launch {
             AppSettings.spatialAudio.collect { applySpatialAudioEnabled() }
         }
+        scope.launch {
+            AppSettings.playbackMode.drop(1).collect { mode ->
+                player?.let { restreamForPlaybackMode(it, mode) }
+            }
+        }
     }
 
     /**
@@ -5439,5 +5492,8 @@ class PlaybackService : MediaLibraryService() {
          * before the same track is asked for again.
          */
         const val RECOVERY_DELAY_MS = 350L
+
+        /** iTunes preview clips are ~30 seconds; clamp seeks when entering SHORTS. */
+        const val SHORTS_PREVIEW_MAX_POSITION_MS = 29_000L
     }
 }
