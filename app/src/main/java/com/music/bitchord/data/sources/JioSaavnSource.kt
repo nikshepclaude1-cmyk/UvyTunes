@@ -1,5 +1,6 @@
 package com.music.bitchord.data.sources
 
+import com.music.bitchord.data.ITunesSearchApi
 import com.music.bitchord.data.TrackLog
 import com.music.bitchord.data.jiosaavn.JioSaavnService
 import com.music.bitchord.data.jiosaavn.prioritizeExplicit
@@ -28,8 +29,18 @@ class JioSaavnSource(
                 "explicit=${it.explicitContent}" }.takeIf { results.isNotEmpty() }.orEmpty())
         return results.take(limit).map { raw ->
             val primaryArtists = raw.moreInfo.artistMap.primaryArtists.joinToString(", ") { it.name }
-            val artistName = primaryArtists.ifBlank { "Unknown Artist" }
+            var artistName = primaryArtists.ifBlank { "Unknown Artist" }
             
+            // If artist is unknown, try iTunes to fetch the real artist
+            if (artistName == "Unknown Artist") {
+                try {
+                    val iTunesResult = ITunesSearchApi.search(raw.title, "", raw.moreInfo.album.ifBlank { null })
+                    if (iTunesResult != null && iTunesResult.artistName.isNotBlank()) {
+                        artistName = iTunesResult.artistName
+                    }
+                } catch (_: Exception) { }
+            }
+
             // Generate higher quality thumbnail link (e.g. 500x500)
             val thumbnail = raw.image
                 .replace(Regex("150x150|50x50"), "500x500")

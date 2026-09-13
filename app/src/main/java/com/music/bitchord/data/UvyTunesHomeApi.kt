@@ -86,40 +86,36 @@ object UvyTunesHomeApi {
     )
 
     private val playlistQueries = listOf(
-        PlaylistQuery("english+top", "English Charts"),
-        PlaylistQuery("english+pop", "English Charts"),
-        PlaylistQuery("english+rock", "English Charts"),
-        PlaylistQuery("hindi+top", "Trending in India"),
-        PlaylistQuery("bollywood+top", "Trending in India"),
-        PlaylistQuery("tamil+top", "Trending in India"),
-        PlaylistQuery("telugu+top", "Trending in India"),
-        PlaylistQuery("english+hip+hop", "English Vibes"),
-        PlaylistQuery("english+R%26B", "English Vibes"),
-        PlaylistQuery("english+chill", "English Vibes"),
+        PlaylistQuery("hindi+top", "Hindi Top Charts"),
+        PlaylistQuery("bollywood+top", "Bollywood Hits"),
+        PlaylistQuery("hindi+romantic", "Hindi Romantic"),
+        PlaylistQuery("hindi+90s", "90s Bollywood"),
+        PlaylistQuery("hindi+party", "Hindi Party"),
+        PlaylistQuery("hindi+indie", "Hindi Indie"),
+        PlaylistQuery("tamil+top", "Tamil Top Charts"),
+        PlaylistQuery("telugu+top", "Telugu Top Charts"),
+        PlaylistQuery("punjabi+top", "Punjabi Hits"),
+        PlaylistQuery("kannada+top", "Kannada Top Charts"),
+        PlaylistQuery("malayalam+top", "Malayalam Top Charts"),
+        PlaylistQuery("marathi+top", "Marathi Top Charts"),
+        PlaylistQuery("bhojpuri+top", "Bhojpuri Top Charts"),
+        PlaylistQuery("indian+classical", "Indian Classical"),
+        PlaylistQuery("indian+devotional", "Indian Devotional"),
     )
 
-    suspend fun fetchHomeShelves(): Result<List<HomeShelf>> = coroutineScope {
-        val jiosaavnDeferred = async(Dispatchers.IO) { fetchJiosaavnPlaylists() }
-        val itunesDeferred = async(Dispatchers.IO) { fetchITunesTopSongs() }
-
-        val jiosaavnResult = runCatching { jiosaavnDeferred.await() }
-        val itunesResult = runCatching { itunesDeferred.await() }
-
-        val jiosaavnShelves = jiosaavnResult.getOrElse {
+    suspend fun fetchIndianPlaylists(): List<HomeShelf> = coroutineScope {
+        val deferred = async(Dispatchers.IO) { fetchJiosaavnPlaylists() }
+        runCatching { deferred.await() }.getOrElse {
             Log.e(TAG, "JioSaavn playlist fetch failed", it)
             emptyList()
         }
-        val itunesShelves = itunesResult.getOrElse {
+    }
+
+    suspend fun fetchITunesTopSongs(): List<HomeShelf> = coroutineScope {
+        val deferred = async(Dispatchers.IO) { fetchITunesTopSongsFeed() }
+        runCatching { deferred.await() }.getOrElse {
             Log.e(TAG, "iTunes RSS fetch failed", it)
             emptyList()
-        }
-
-        val allShelves = jiosaavnShelves + itunesShelves
-        if (allShelves.isEmpty()) {
-            val error = jiosaavnResult.exceptionOrNull() ?: itunesResult.exceptionOrNull()
-            Result.failure(error ?: Exception("All home data sources failed"))
-        } else {
-            Result.success(allShelves)
         }
     }
 
@@ -167,7 +163,7 @@ object UvyTunesHomeApi {
         }
     }
 
-    private fun fetchITunesTopSongs(): List<HomeShelf> {
+    private fun fetchITunesTopSongsFeed(): List<HomeShelf> {
         return try {
             val url = "https://itunes.apple.com/in/rss/topsongs/limit=25/json"
             val request = Request.Builder()
@@ -192,7 +188,7 @@ object UvyTunesHomeApi {
             }
 
             if (items.isEmpty()) emptyList()
-            else listOf(HomeShelf(title = "Top Songs India", items = items))
+            else listOf(HomeShelf(title = "Top Songs India - iTunes", items = items))
         } catch (e: Exception) {
             Log.e(TAG, "iTunes RSS fetch failed (gracefully skipping): ${e.message}")
             emptyList()

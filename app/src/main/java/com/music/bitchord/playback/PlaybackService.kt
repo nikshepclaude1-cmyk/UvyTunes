@@ -890,11 +890,13 @@ class PlaybackService : MediaLibraryService() {
                 val title = dataSpec.uri.getQueryParameter("t").orEmpty()
                 val artist = dataSpec.uri.getQueryParameter("a").orEmpty()
                 val album = dataSpec.uri.getQueryParameter("l").orEmpty().ifBlank { null }
-                val previewUrl = runBlocking(about) {
+                val iTunesResult = runBlocking(about) {
                     withTimeout(RESOLVE_TIMEOUT_MS) {
-                        com.music.bitchord.data.ITunesSearchApi.resolvePreviewUrl(title, artist, album)
+                        com.music.bitchord.data.ITunesSearchApi.search(title, artist, album)
                     }
-                } ?: throw java.io.IOException("iTunes: no matching track for '$artist - $title'")
+                }
+                val previewUrl = iTunesResult?.previewUrl
+                    ?: throw java.io.IOException("iTunes: no matching track for '$artist - $title'")
                 TrackLog.d("BitChord", "serving iTunes preview for '$artist - $title'", about = title)
                 return@Resolver dataSpec.buildUpon()
                     .setUri(Uri.parse(previewUrl))

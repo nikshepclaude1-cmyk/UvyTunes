@@ -205,6 +205,7 @@ import com.music.bitchord.data.lyrics.LyricsSource
 import com.music.bitchord.ui.components.LyricsLogConsole
 import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.data.settings.AudioQuality
+import com.music.bitchord.data.settings.PlaybackMode
 import com.music.bitchord.data.model.LikeStatus
 import com.music.bitchord.data.model.PLAYER_ART_PX
 import com.music.bitchord.data.model.Song
@@ -2152,6 +2153,39 @@ fun NowPlayingScreen(
                 }
             }
             val transitionWindow by AppSettings.smartTransitionWindow.collectAsStateWithLifecycle()
+            // SHORTS / MAX mode toggle
+            val playbackMode by AppSettings.playbackMode.collectAsStateWithLifecycle()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                listOf(
+                    PlaybackMode.SHORTS to "SHORTS",
+                    PlaybackMode.MAX to "MAX",
+                ).forEach { (mode, label) ->
+                    val selected = playbackMode == mode
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                                else Color.Transparent,
+                            )
+                            .clickable { AppSettings.setPlaybackMode(mode) }
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (selected) MaterialTheme.colorScheme.primary
+                            else Color.White.copy(alpha = 0.5f),
+                        )
+                    }
+                }
+            }
             ThinSlider(
                 value = shown,
                 onValueChange = {

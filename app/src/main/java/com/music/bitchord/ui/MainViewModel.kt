@@ -1214,20 +1214,60 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         homeContinuation = null
         homeSeenTitles.clear()
         _homeLoadingMore.value = false
-        _homeRecentlyPlayedLoading.value = false
-        _homePendingShelves.value = 1
+        _homeRecentlyPlayedLoading.value = _signedIn.value
+        _homePendingShelves.value = 1 + YtMusicRepository.HOME_SUPPLEMENT_BROWSE_IDS.size
         viewModelScope.launch {
-            try {
-                val shelves = UvyTunesHomeApi.fetchHomeShelves().getOrThrow()
-                if (isCurrentHomeLoad(identity, generation)) {
-                    publishHomeShelves(shelves)
+            launch {
+                try {
+                    YtMusicRepository.home()
+                        .onSuccess { feed ->
+                            if (!isCurrentHomeLoad(identity, generation)) return@onSuccess
+                            homeContinuation = feed.continuation
+                            publishHomeShelves(feed.shelves)
+                        }
+                        .onFailure { failure ->
+                            if (isCurrentHomeLoad(identity, generation) && _home.value !is UiState.Success) {
+                                _home.value = UiState.Error(failure.friendly())
+                            }
+                        }
+                } finally {
+                    homeShelfRequestSettled(identity, generation)
                 }
-            } catch (e: Exception) {
-                if (isCurrentHomeLoad(identity, generation) && _home.value !is UiState.Success) {
-                    _home.value = UiState.Error(e.message ?: "Failed to load")
+            }
+            if (_signedIn.value) {
+                launch {
+                    YtMusicRepository.homeRecentlyPlayed()
+                        .onSuccess { shelf ->
+                            if (isCurrentHomeLoad(identity, generation)) {
+                                _homeRecentlyPlayedLoading.value = false
+                                shelf?.let { publishHomeShelves(listOf(it), prepend = true) }
+                            }
+                        }
+                        .onFailure {
+                            if (isCurrentHomeLoad(identity, generation)) _homeRecentlyPlayedLoading.value = false
+                        }
                 }
-            } finally {
-                homeShelfRequestSettled(identity, generation)
+            }
+            YtMusicRepository.HOME_SUPPLEMENT_BROWSE_IDS.forEach { browseId ->
+                launch {
+                    try {
+                        YtMusicRepository.homeSupplement(browseId).onSuccess { shelves ->
+                            if (isCurrentHomeLoad(identity, generation)) publishHomeShelves(shelves)
+                        }
+                    } finally {
+                        homeShelfRequestSettled(identity, generation)
+                    }
+                }
+            }
+            launch {
+                try {
+                    val indianShelves = UvyTunesHomeApi.fetchIndianPlaylists()
+                    if (isCurrentHomeLoad(identity, generation) && indianShelves.isNotEmpty()) {
+                        publishHomeShelves(indianShelves)
+                    }
+                } catch (e: Exception) {
+                    Log.e("MainViewModel", "Indian playlists failed: ${e.message}")
+                }
             }
         }
     }
@@ -1270,7 +1310,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * loaded — [homeContinuation] covers all three by construction.
      */
     fun loadMoreHome() {
-        // No pagination needed for curated home feed
+        val token = homeContinuation ?: return
+        if (_homeLoadingMore.value) return
+        val identity = listenerKey()
+        _homeLoadingMore.value = true
+        viewModelScope.launch {
+            YtMusicRepository.moreHome(token).onSuccess { feed ->
+                if (identity == listenerKey()) {
+                    val added = feed.shelves.filter { homeSeenTitles.add(it.title.lowercase(Locale.ROOT)) }
+                    homeContinuation = feed.continuation.takeIf { added.isNotEmpty() }
+                    if (added.isNotEmpty()) {
+                        val existing = (_home.value as? UiState.Success)?.data ?: emptyList()
+                        _home.value = UiState.Success(existing + added)
+                    }
+                }
+            }
+            if (identity == listenerKey()) _homeLoadingMore.value = false
+        }
     }
 
     fun loadLibrary() {
