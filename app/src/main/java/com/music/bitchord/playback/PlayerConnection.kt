@@ -524,20 +524,6 @@ private fun Song.directYouTubeUri(): String =
     "bitchord://watch?v=$videoId${matchQuery()}&$DIRECT_YOUTUBE_PARAMETER=1&q=original"
 
 /**
- * Build an iTunes search URI for SHORTS mode.
- *
- * The resolver will call [com.music.bitchord.data.ITunesSearchApi] to find
- * a matching preview URL from the iTunes catalogue.
- */
-fun Song.itunesSearchUri(): String {
-    val encodedTitle = Uri.encode(title)
-    val encodedArtist = Uri.encode(artist)
-    val encodedAlbum = Uri.encode(albumName.orEmpty())
-    return "itunes://search?t=$encodedTitle&a=$encodedArtist&l=$encodedAlbum&v=$videoId"
-    return "itunes://search?t=$encodedTitle&a=$encodedArtist&l=$encodedAlbum&v=$videoId"
-}
-
-/**
  * Whether there is a YouTube upload behind this song to go back *to* — the
  * question "Revert to original" only means something for.
  *
