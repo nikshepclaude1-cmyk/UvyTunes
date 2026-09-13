@@ -117,6 +117,7 @@ import com.music.bitchord.data.model.durationMillis
 import com.music.bitchord.data.scrobbling.LastFM
 import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.data.settings.LibrarySort
+import com.music.bitchord.data.settings.PlaybackMode
 import com.music.bitchord.data.settings.ThemeMode
 import com.music.bitchord.ui.components.AccountProfileSelector
 import com.music.bitchord.ui.screens.AccountAndScrobblingScreen
@@ -458,6 +459,7 @@ private fun BitChordApp(
     // page's own overflow — because only one of them can be held at a time.
     var browseActions by remember { mutableStateOf<BrowseTarget?>(null) }
     val autoplay by AppSettings.autoplay.collectAsStateWithLifecycle()
+    val playbackMode by AppSettings.playbackMode.collectAsStateWithLifecycle()
     val listenBrainzToken by AppSettings.listenBrainzToken.collectAsStateWithLifecycle()
     // Incremented each time the search tab is re-tapped while already selected,
     // which SearchScreen uses as a signal to focus the input field.
@@ -967,7 +969,7 @@ private fun BitChordApp(
 
     /**
      * A YouTube Music link tapped elsewhere on the device, a link shared into
-     * BitChord, or "play something" said to the assistant — see [MusicLink].
+     * UvyTunes, or "play something" said to the assistant — see [MusicLink].
      *
      * Keyed on the controller as well as the request, because a link is as
      * often as not what cold-starts the app: the session it has to play into is
@@ -2328,6 +2330,40 @@ private fun BitChordApp(
                             // [TopBarDownloadButton], which decides that for
                             // itself rather than being told.
                             TopBarDownloadButton(onClick = { showDownloadManager = true })
+                            // MAX / SHORTS mode toggle
+                            if (!showSettings && !showAccountScrobbling && !showSources && detail == null) {
+                                Box {
+                                    var modeMenuOpen by remember { mutableStateOf(false) }
+                                    IconButton(onClick = { modeMenuOpen = true }) {
+                                        Text(
+                                            text = playbackMode.label,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (playbackMode == PlaybackMode.SHORTS) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurface
+                                            },
+                                        )
+                                    }
+                                    DropdownMenu(
+                                        expanded = modeMenuOpen,
+                                        onDismissRequest = { modeMenuOpen = false },
+                                    ) {
+                                        PlaybackMode.entries.forEach { mode ->
+                                            DropdownMenuItem(
+                                                text = { Text(mode.label) },
+                                                trailingIcon = if (mode == playbackMode) {
+                                                    { Icon(Icons.Rounded.Check, contentDescription = null) }
+                                                } else null,
+                                                onClick = {
+                                                    AppSettings.setPlaybackMode(mode)
+                                                    modeMenuOpen = false
+                                                },
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                             TopBarAccountButton(
                                 account = account,
                                 onClick = {

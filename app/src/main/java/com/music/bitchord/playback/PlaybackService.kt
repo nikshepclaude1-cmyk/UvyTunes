@@ -885,6 +885,21 @@ class PlaybackService : MediaLibraryService() {
                     .setHttpRequestHeaders(stream.headers)
                     .build()
             }
+            // SHORTS mode: iTunes search URI → preview URL
+            if (dataSpec.uri.authority == "itunes") {
+                val title = dataSpec.uri.getQueryParameter("t").orEmpty()
+                val artist = dataSpec.uri.getQueryParameter("a").orEmpty()
+                val album = dataSpec.uri.getQueryParameter("l").orEmpty().ifBlank { null }
+                val previewUrl = runBlocking(about) {
+                    withTimeout(RESOLVE_TIMEOUT_MS) {
+                        com.music.bitchord.data.ITunesSearchApi.resolvePreviewUrl(title, artist, album)
+                    }
+                } ?: throw java.io.IOException("iTunes: no matching track for '$artist - $title'")
+                TrackLog.d("BitChord", "serving iTunes preview for '$artist - $title'", about = title)
+                return@Resolver dataSpec.buildUpon()
+                    .setUri(Uri.parse(previewUrl))
+                    .build()
+            }
             val videoId = dataSpec.uri.getQueryParameter("v")
                 ?: return@Resolver dataSpec
             // An explicit rollback is not a preference for a different

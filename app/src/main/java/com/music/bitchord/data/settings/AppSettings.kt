@@ -121,6 +121,11 @@ enum class ThemeMode(val label: String) {
     SYSTEM("System"), LIGHT("Light"), DARK("Dark")
 }
 
+/** Music source mode: MAX uses YouTube Music, SHORTS uses iTunes previews. */
+enum class PlaybackMode(val label: String) {
+    MAX("MAX"), SHORTS("SHORTS")
+}
+
 /** CPU budget for Automix's background analysis, not its audible mix algorithm. */
 enum class AutomixPerformanceMode(val inferenceThreads: Int) {
     EFFICIENT(1),
@@ -288,6 +293,9 @@ object AppSettings {
     val spatialAudio = MutableStateFlow(false)
     val playbackSpeed = MutableStateFlow(1.0f)
     val themeMode = MutableStateFlow(ThemeMode.DARK)
+
+    /** MAX uses YouTube Music; SHORTS uses iTunes preview audio. */
+    val playbackMode = MutableStateFlow(PlaybackMode.MAX)
 
     /** Keep playing similar music once the queue runs out. */
     val autoplay = MutableStateFlow(true)
@@ -636,6 +644,9 @@ object AppSettings {
         themeMode.value = runCatching {
             ThemeMode.valueOf(prefs.getString(KEY_THEME, null) ?: "DARK")
         }.getOrDefault(ThemeMode.DARK)
+        playbackMode.value = runCatching {
+            PlaybackMode.valueOf(prefs.getString(KEY_PLAYBACK_MODE, null) ?: "MAX")
+        }.getOrDefault(PlaybackMode.MAX)
         autoplay.value = prefs.getBoolean(KEY_AUTOPLAY, true)
         shuffleEnabled.value = prefs.getBoolean(KEY_SHUFFLE_ENABLED, false)
         repeatMode.value = prefs.getInt(KEY_REPEAT_MODE, Player.REPEAT_MODE_OFF)
@@ -885,6 +896,11 @@ object AppSettings {
     fun setThemeMode(value: ThemeMode) {
         themeMode.value = value
         prefs.edit().putString(KEY_THEME, value.name).apply()
+    }
+
+    fun setPlaybackMode(value: PlaybackMode) {
+        playbackMode.value = value
+        prefs.edit().putString(KEY_PLAYBACK_MODE, value.name).apply()
     }
 
     fun setReduceAnimation(value: Boolean) {
@@ -1409,6 +1425,7 @@ object AppSettings {
     private const val KEY_SPATIAL_AUDIO = "spatial_audio"
     private const val KEY_SPEED = "playback_speed"
     private const val KEY_THEME = "theme_mode"
+    private const val KEY_PLAYBACK_MODE = "playback_mode"
     private const val KEY_AUTOPLAY = "autoplay"
     private const val KEY_SHUFFLE_ENABLED = "shuffle_enabled"
     private const val KEY_REPEAT_MODE = "repeat_mode"

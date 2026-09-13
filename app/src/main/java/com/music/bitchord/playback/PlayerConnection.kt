@@ -25,6 +25,7 @@ import androidx.media3.session.SessionToken
 import com.music.bitchord.data.model.NOTIFICATION_ART_PX
 import com.music.bitchord.data.model.Song
 import com.music.bitchord.data.model.artworkAt
+import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.data.sources.SourceRegistry
 import com.music.bitchord.data.sources.TrackMatcher
 import com.music.bitchord.download.Downloads
@@ -416,6 +417,9 @@ fun Song.toMediaItem(): MediaItem {
         ?: Downloads.verifiedSavedUri(videoId)
     val uriString = offlineUri ?: when {
         videoId.startsWith("content://") || videoId.startsWith("file://") -> videoId
+        // In SHORTS mode, route to iTunes Search API instead of YouTube
+        AppSettings.playbackMode.value == com.music.bitchord.data.settings.PlaybackMode.SHORTS &&
+            !videoId.startsWith("source:") -> itunesSearchUri()
         // Title, artist and runtime ride along in the URI because they are what
         // a cross-source match is made on, and the resolver runs on ExoPlayer's
         // loader thread with nothing but a DataSpec in hand — see
@@ -520,6 +524,19 @@ fun Song.toDirectYouTubeMediaItem(): MediaItem =
 
 private fun Song.directYouTubeUri(): String =
     "bitchord://watch?v=$videoId${matchQuery()}&$DIRECT_YOUTUBE_PARAMETER=1&q=original"
+
+/**
+ * Build an iTunes search URI for SHORTS mode.
+ *
+ * The resolver will call [com.music.bitchord.data.ITunesSearchApi] to find
+ * a matching preview URL from the iTunes catalogue.
+ */
+fun Song.itunesSearchUri(): String {
+    val encodedTitle = Uri.encode(title)
+    val encodedArtist = Uri.encode(artist)
+    val encodedAlbum = Uri.encode(albumName.orEmpty())
+    return "itunes://search?t=$encodedTitle&a=$encodedArtist&l=$encodedAlbum&v=$videoId"
+}
 
 /**
  * Whether there is a YouTube upload behind this song to go back *to* — the
