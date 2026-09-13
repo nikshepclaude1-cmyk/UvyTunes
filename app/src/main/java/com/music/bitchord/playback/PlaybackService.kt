@@ -923,11 +923,19 @@ class PlaybackService : MediaLibraryService() {
                         .setUri(Uri.parse(previewUrl))
                         .build()
                 }
-                // MAX: fall through to normal YouTube resolution below
-                // Rewrite URI to the standard YouTube format the rest of the
-                // resolver understands.
+                // MAX: resolve YouTube directly
+                val streamUrl = try {
+                    runBlocking(about) {
+                        withTimeout(RESOLVE_TIMEOUT_MS) { StreamResolver.resolve(videoId) }
+                    }
+                } catch (e: TimeoutCancellationException) {
+                    throw java.io.IOException("YouTube resolution timed out for $videoId", e)
+                }
+                val headers = PlayerClient.forStreamUrl(streamUrl).mediaHeaders()
+                TrackLog.d("BitChord", "serving YouTube for $videoId (MAX mode)", about = videoId)
                 return@Resolver dataSpec.buildUpon()
-                    .setUri(Uri.parse("bitchord://watch?v=$videoId"))
+                    .setUri(Uri.parse(streamUrl))
+                    .setHttpRequestHeaders(headers)
                     .build()
             }
             val videoId = dataSpec.uri.getQueryParameter("v")
