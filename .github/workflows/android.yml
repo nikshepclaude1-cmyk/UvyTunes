@@ -50,19 +50,36 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Setup local.properties
+    - name: Setup Secrets (Keystore & local.properties)
       run: |
         echo "LASTFM_API_KEY=${{ secrets.LASTFM_API_KEY }}" > local.properties
         echo "LASTFM_SECRET=${{ secrets.LASTFM_SECRET }}" >> local.properties
 
+        if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > uvytunes-release.jks
+          echo "storeFile=uvytunes-release.jks" > keystore.properties
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> keystore.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> keystore.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> keystore.properties
+        else
+          keytool -genkeypair -v -keystore uvytunes-release.jks -alias uvytunes \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass uvypassword -keypass uvypassword \
+            -dname "CN=UvyTunes, OU=Dev, O=UvyTunes, L=Unknown, ST=Unknown, C=US"
+          echo "storeFile=uvytunes-release.jks" > keystore.properties
+          echo "storePassword=uvypassword" >> keystore.properties
+          echo "keyAlias=uvytunes" >> keystore.properties
+          echo "keyPassword=uvypassword" >> keystore.properties
+        fi
+
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Build Dev Debug APK
-      run: ./gradlew assembleDevDebug
+    - name: Build Prod Release APK
+      run: ./gradlew assembleProdRelease
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: uvytunes-dev-debug
-        path: app/build/outputs/apk/dev/debug/*.apk
+        name: uvytunes-prod-release
+        path: app/build/outputs/apk/prod/release/*.apk
