@@ -442,7 +442,7 @@ fun SettingsScreen(
                 title = "Export compatible downloads",
                 checked = exportDownloads,
                 onCheckedChange = AppSettings::setExportDownloads,
-                badge = "Music/BitChord".takeIf { exportDownloads },
+                badge = "Music/uvytunes".takeIf { exportDownloads },
             )
         }
 

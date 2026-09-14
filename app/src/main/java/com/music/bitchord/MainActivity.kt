@@ -2336,7 +2336,7 @@ private fun BitChordApp(
                                     var modeMenuOpen by remember { mutableStateOf(false) }
                                     IconButton(onClick = { modeMenuOpen = true }) {
                                         Text(
-                                            text = playbackMode.label,
+                                            text = if (playbackMode == PlaybackMode.MAX) "M" else "S",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = if (playbackMode == PlaybackMode.SHORTS) {
                                                 MaterialTheme.colorScheme.primary

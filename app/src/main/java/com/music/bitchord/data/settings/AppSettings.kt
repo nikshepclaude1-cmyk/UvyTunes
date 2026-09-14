@@ -518,6 +518,9 @@ object AppSettings {
     val discordName = MutableStateFlow("")
     val discordAvatar = MutableStateFlow("")
 
+    /** Local display name shown on the account page; empty means unset. */
+    val profileDisplayName = MutableStateFlow("")
+
     val discordRpcEnabled = MutableStateFlow(true)
 
     /** Put the track title on the bold profile line, in place of the artist. */
@@ -706,6 +709,7 @@ object AppSettings {
         localMusicFolderUri.value = prefs.getString(KEY_LOCAL_MUSIC_FOLDER_URI, "").orEmpty()
         pinnedPlaylists.value = readPinnedPlaylists()
         discordToken.value = authStore.discordToken.orEmpty()
+        profileDisplayName.value = prefs.getString(KEY_PROFILE_DISPLAY_NAME, "").orEmpty()
         discordUsername.value = prefs.getString(KEY_DISCORD_USERNAME, "").orEmpty()
         discordName.value = prefs.getString(KEY_DISCORD_NAME, "").orEmpty()
         discordAvatar.value = prefs.getString(KEY_DISCORD_AVATAR, "").orEmpty()
@@ -1162,6 +1166,11 @@ object AppSettings {
         prefs.edit().putBoolean(KEY_LISTENBRAINZ_PRIMARY_ARTIST_ONLY, value).apply()
     }
 
+    fun setProfileDisplayName(value: String) {
+        profileDisplayName.value = value
+        prefs.edit().putString(KEY_PROFILE_DISPLAY_NAME, value).apply()
+    }
+
     /** Writes through to the encrypted store; pass "" to disconnect. */
     fun setDiscordToken(value: String) {
         discordToken.value = value
@@ -1476,6 +1485,8 @@ object AppSettings {
     private const val KEY_LISTENBRAINZ_TOKEN = "listenbrainz_token"
     private const val KEY_LISTENBRAINZ_PRIMARY_ARTIST_ONLY = "listenbrainz_primary_artist_only"
     private const val KEY_SPOTIFY_SPDC_TOKEN = "spotify_spdc_token"
+
+    private const val KEY_PROFILE_DISPLAY_NAME = "profile_display_name"
 
     private const val KEY_DISCORD_USERNAME = "discord_username"
     private const val KEY_DISCORD_NAME = "discord_name"

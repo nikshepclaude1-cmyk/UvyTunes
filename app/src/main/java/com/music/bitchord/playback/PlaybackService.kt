@@ -1810,25 +1810,29 @@ class PlaybackService : MediaLibraryService() {
             AudioCache.cancel()
             withContext(Dispatchers.IO) { AudioCache.discard(uri) }
             withContext(Dispatchers.Main) {
-                if (player.currentMediaItemIndex != index ||
-                    player.currentMediaItem?.mediaId != mediaId
-                ) return@withContext
-                if (crossfade?.isTransitioning() == true) return@withContext
+                try {
+                    if (player.currentMediaItemIndex != index ||
+                        player.currentMediaItem?.mediaId != mediaId
+                    ) return@withContext
+                    if (crossfade?.isTransitioning() == true) return@withContext
 
-                QualityUpgrade.forget(mediaId)
-                StreamChoice.forget(mediaId)
-                NerdStats.clearDeclared(mediaId)
+                    QualityUpgrade.forget(mediaId)
+                    StreamChoice.forget(mediaId)
+                    NerdStats.clearDeclared(mediaId)
 
-                player.replaceMediaItem(index, item.toSong().toMediaItem())
-                val seekTo = if (mode == PlaybackMode.SHORTS) {
-                    position.coerceAtMost(SHORTS_PREVIEW_MAX_POSITION_MS)
-                } else {
-                    position
+                    player.replaceMediaItem(index, item.toSong().toMediaItem())
+                    // A mode switch restarts the song from 0:00 — the new
+                    // source (full track vs 30s preview) starts clean instead
+                    // of resuming mid-stream in the wrong format.
+                    player.seekTo(index, 0L)
+                    player.prepare()
+                    if (wasPlaying) player.play()
+                    TrackLog.d("BitChord", "restreamed $mediaId for $mode mode from start", about = mediaId)
+                } catch (_: IllegalStateException) {
+                    // Player was released during the IO suspension (e.g. an
+                    // audio-route change rebuilt the players). Safe to ignore —
+                    // the new player resolves the track on its own.
                 }
-                player.seekTo(index, seekTo)
-                player.prepare()
-                if (wasPlaying) player.play()
-                TrackLog.d("BitChord", "restreamed $mediaId for $mode mode", about = mediaId)
             }
         }
     }
