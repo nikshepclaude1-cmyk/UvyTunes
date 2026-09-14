@@ -290,6 +290,7 @@ class PlaybackService : MediaLibraryService() {
     private var spare: ExoPlayer? = null
 
     private var crossfade: CrossfadeController? = null
+    private var restreamJob: Job? = null
     private var configuredFloatOutput = false
     private var outputReconfigureJob: Job? = null
 
@@ -1811,7 +1812,9 @@ class PlaybackService : MediaLibraryService() {
         val position = player.currentPosition
         val wasPlaying = player.isPlaying
 
-        scope.launch {
+        // Cancel any in-flight restream so only the latest mode wins.
+        restreamJob?.cancel()
+        restreamJob = scope.launch {
             AudioCache.cancel()
             withContext(Dispatchers.IO) { AudioCache.discard(uri) }
             withContext(Dispatchers.Main) {
