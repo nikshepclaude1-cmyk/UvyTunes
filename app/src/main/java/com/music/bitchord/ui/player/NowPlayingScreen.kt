@@ -690,10 +690,7 @@ fun NowPlayingScreen(
     val canvasEnabled by AppSettings.animatedCanvas.collectAsStateWithLifecycle()
     val canvasOverCellular by AppSettings.canvasOverCellular.collectAsStateWithLifecycle()
     val meteredConnection by AppSettings.meteredConnection.collectAsStateWithLifecycle()
-    // The switch turns the feature off outright; this is the narrower "not
-    // over cellular" case — see [AppSettings.canvasOverCellular] for why a
-    // clip's own loop makes that worth guarding separately from a still image.
-    val canvasAllowedNow = canvasEnabled && (meteredConnection != true || canvasOverCellular)
+    val canvasAllowedNow = canvasEnabled
     var canvas by remember(song.videoId) { mutableStateOf<CanvasArtwork?>(null) }
     // Whether the clip actually has a frame on screen right now, and one of
     // them — used to blow the sleeve out to the full-bleed hero treatment and
