@@ -133,6 +133,7 @@ import com.music.bitchord.data.sources.DeviceCodecs
 import com.music.bitchord.data.settings.AudioQuality
 import com.music.bitchord.data.settings.DownloadQuality
 import com.music.bitchord.data.settings.ThemeMode
+import com.music.bitchord.data.settings.PlaybackMode
 import com.music.bitchord.data.stats.Backup
 import com.music.bitchord.playback.AudioCache
 import com.music.bitchord.ui.player.fullBleedArtworkAvailable
@@ -200,6 +201,7 @@ fun SettingsScreen(
     val outputStatus by AudioOutputStatus.current.collectAsStateWithLifecycle()
     val cacheLimitBytes by AppSettings.audioCacheLimitBytes.collectAsStateWithLifecycle()
     val downloadQuality by AppSettings.downloadQuality.collectAsStateWithLifecycle()
+    val playbackMode by AppSettings.playbackMode.collectAsStateWithLifecycle()
     val wifiOnlyDownloads by AppSettings.wifiOnlyDownloads.collectAsStateWithLifecycle()
     val exportDownloads by AppSettings.exportDownloads.collectAsStateWithLifecycle()
     val stopOnTaskRemoved by AppSettings.stopOnTaskRemoved.collectAsStateWithLifecycle()
@@ -403,6 +405,20 @@ fun SettingsScreen(
                     )
                 },
                 onClick = { AppSettings.setDolbyAtmos(!dolbyAtmos) },
+            )
+        }
+
+        SettingsGroup(header = "Playback") {
+            SettingsRow(
+                icon = Icons.Rounded.PlayArrow,
+                title = "Playback mode",
+                subtitle = "MAX = full source, SHORTS = 30s iTunes preview",
+            )
+            SegmentedControl(
+                options = PlaybackMode.entries.map { it.label },
+                selectedIndex = PlaybackMode.entries.indexOf(playbackMode),
+                onSelect = { AppSettings.setPlaybackMode(PlaybackMode.entries[it]) },
+                modifier = Modifier.padding(start = ROW_INSET, end = ROW_INSET, bottom = 14.dp),
             )
         }
 

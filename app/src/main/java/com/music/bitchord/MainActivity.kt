@@ -2331,7 +2331,7 @@ private fun BitChordApp(
                             // itself rather than being told.
                             TopBarDownloadButton(onClick = { showDownloadManager = true })
                             // MAX / SHORTS mode toggle
-                            if (!showSettings && !showAccountScrobbling && !showSources && detail == null) {
+                            if (!showAccountScrobbling && !showSources && detail == null) {
                                 Box {
                                     var modeMenuOpen by remember { mutableStateOf(false) }
                                     IconButton(onClick = { modeMenuOpen = true }) {
