@@ -298,6 +298,44 @@ class CrossfadeController(
     fun isTransitioning(): Boolean = phase != Phase.IDLE
 
     /**
+     * Rebuilds the incoming track's MediaItem on the standby player so the
+     * resolver runs under [newMode]. Called when the user toggles MAX/SHORTS
+     * while a crossfade is arming — the standby may have already resolved
+     * its incoming item under the old mode.
+     *
+     * Only meaningful during [Phase.ARMING]: once [startFade] has run the
+     * standby is already audible and touching it would break the blend.
+     *
+     * @return true if the incoming item was replaced, false if there was
+     *         nothing to replace (idle, fading, or no next track).
+     */
+    fun replaceIncomingForMode(newMode: com.music.bitchord.data.settings.PlaybackMode): Boolean {
+        if (phase != Phase.ARMING) return false
+        val into = incoming ?: return false
+        val out = outgoing ?: return false
+        val nextIndex = out.nextMediaItemIndex
+        if (nextIndex == C.INDEX_UNSET) return false
+        val incomingItem = out.getMediaItemAt(nextIndex)
+        val incomingMediaId = incomingItem.mediaId
+
+        // Find the incoming item on the standby by media ID.
+        var standbyIndex = -1
+        for (i in 0 until into.mediaItemCount) {
+            if (into.getMediaItemAt(i).mediaId == incomingMediaId) {
+                standbyIndex = i
+                break
+            }
+        }
+        if (standbyIndex < 0) return false
+
+        val song = incomingItem.toSong()
+        val replacement = song.toMediaItem()
+        into.replaceMediaItem(standbyIndex, replacement)
+        Log.d(TAG, "replaced incoming item for $newMode mode: ${song.title}")
+        return true
+    }
+
+    /**
      * How long since the last transition finished, or null while none has.
      *
      * For the same caller as [isTransitioning], which needs a little more than

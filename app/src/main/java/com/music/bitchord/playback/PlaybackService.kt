@@ -3760,6 +3760,10 @@ class PlaybackService : MediaLibraryService() {
         scope.launch {
             AppSettings.playbackMode.drop(1).collect { mode ->
                 player?.let { restreamForPlaybackMode(it, mode) }
+                // Also re-resolve the incoming item on the standby player
+                // if a crossfade is arming — it may have buffered under the
+                // old mode.
+                crossfade?.replaceIncomingForMode(mode)
             }
         }
     }
