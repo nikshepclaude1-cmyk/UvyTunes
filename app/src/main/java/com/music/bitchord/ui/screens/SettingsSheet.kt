@@ -204,6 +204,8 @@ fun SettingsScreen(
     val cacheLimitBytes by AppSettings.audioCacheLimitBytes.collectAsStateWithLifecycle()
     val downloadQuality by AppSettings.downloadQuality.collectAsStateWithLifecycle()
     val playbackMode by AppSettings.playbackMode.collectAsStateWithLifecycle()
+    val animatedCanvas by AppSettings.animatedCanvas.collectAsStateWithLifecycle()
+    val canvasOverCellular by AppSettings.canvasOverCellular.collectAsStateWithLifecycle()
     val wifiOnlyDownloads by AppSettings.wifiOnlyDownloads.collectAsStateWithLifecycle()
     val exportDownloads by AppSettings.exportDownloads.collectAsStateWithLifecycle()
     val stopOnTaskRemoved by AppSettings.stopOnTaskRemoved.collectAsStateWithLifecycle()
@@ -422,6 +424,20 @@ fun SettingsScreen(
                 onSelect = { AppSettings.setPlaybackMode(PlaybackMode.entries[it]) },
                 modifier = Modifier.padding(start = ROW_INSET, end = ROW_INSET, bottom = 14.dp),
             )
+            RowDivider()
+            SettingsSubRow(
+                title = "Motion artwork (canvas)",
+                checked = animatedCanvas,
+                onCheckedChange = AppSettings::setAnimatedCanvas,
+            )
+            if (animatedCanvas) {
+                RowDivider()
+                SettingsSubRow(
+                    title = "Canvas over cellular",
+                    checked = canvasOverCellular,
+                    onCheckedChange = AppSettings::setCanvasOverCellular,
+                )
+            }
         }
 
         // Its own group rather than rows bolted onto the two above, because a
