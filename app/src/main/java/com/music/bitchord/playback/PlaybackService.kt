@@ -290,6 +290,7 @@ class PlaybackService : MediaLibraryService() {
     private var spare: ExoPlayer? = null
 
     private var crossfade: CrossfadeController? = null
+    private var restreamJob: Job? = null
     private var configuredFloatOutput = false
     private var outputReconfigureJob: Job? = null
 
@@ -1790,9 +1791,48 @@ class PlaybackService : MediaLibraryService() {
      *   on with its ordinary stream recovery — including the case where stripping
      *   the local uri changes nothing, which is a device-library track whose
      *   mediaId *is* the missing file and for which there is no stream to fall
-     *   back to. Returning true there would be a swap that fixes nothing, on a
      *   loop.
      */
+    private fun restreamForPlaybackMode(player: ExoPlayer, mode: PlaybackMode) {
+        val index = player.currentMediaItemIndex
+        if (index == C.INDEX_UNSET) return
+        val item = player.getMediaItemAt(index)
+        val uri = item.localConfiguration?.uri ?: return
+        val scheme = uri.scheme
+        if (scheme == "file" || scheme == "content" || uri.authority == "source") return
+
+        val mediaId = item.mediaId
+        val position = player.currentPosition
+        val wasPlaying = player.isPlaying
+
+        restreamJob?.cancel()
+        restreamJob = scope.launch {
+            AudioCache.cancel()
+            withContext(Dispatchers.IO) { AudioCache.discard(uri) }
+            withContext(Dispatchers.Main) {
+                if (player.currentMediaItemIndex != index ||
+                    player.currentMediaItem?.mediaId != mediaId
+                ) return@withContext
+                if (crossfade?.isTransitioning() == true) return@withContext
+
+                QualityUpgrade.forget(mediaId)
+                StreamChoice.forget(mediaId)
+                NerdStats.clearDeclared(mediaId)
+
+                player.replaceMediaItem(index, item.toSong().toMediaItem())
+                val seekTo = if (mode == PlaybackMode.SHORTS) {
+                    position.coerceAtMost(SHORTS_PREVIEW_MAX_POSITION_MS)
+                } else {
+                    position
+                }
+                player.seekTo(index, seekTo)
+                player.prepare()
+                if (wasPlaying) player.play()
+                TrackLog.d("BitChord", "restreamed $mediaId for $mode mode", about = mediaId)
+            }
+        }
+    }
+
     private fun restreamMissingLocalFile(
         player: ExoPlayer,
         item: MediaItem,
@@ -3712,30 +3752,7 @@ class PlaybackService : MediaLibraryService() {
         }
         scope.launch {
             AppSettings.playbackMode.drop(1).collect { mode ->
-                // Immediately invalidate cached metadata so the next resolve
-                // picks up the new mode. We do NOT tear down the active
-                // source (replaceMediaItem + prepare) because that causes an
-                // audible gap on Android — ExoPlayer's decoder teardown is
-                // not seamless. The current track finishes in its original
-                // mode; the next track resolves under the new mode.
-                //
-                // If a crossfade is arming, also replace the incoming item on
-                // the standby player so it resolves under the new mode.
-                val player = player ?: return@collect
-                val index = player.currentMediaItemIndex
-                if (index != C.INDEX_UNSET) {
-                    val item = player.getMediaItemAt(index)
-                    val uri = item.localConfiguration?.uri ?: return@collect
-                    val mediaId = item.mediaId
-                    // Only discard for streaming URIs — local files don't need it.
-                    val scheme = uri.scheme
-                    if (scheme != "file" && scheme != "content" && uri.authority != "source") {
-                        QualityUpgrade.forget(mediaId)
-                        StreamChoice.forget(mediaId)
-                        NerdStats.clearDeclared(mediaId)
-                        scope.launch(Dispatchers.IO) { AudioCache.discard(uri) }
-                    }
-                }
+                player?.let { restreamForPlaybackMode(it, mode) }
                 crossfade?.replaceIncomingForMode(mode)
             }
         }
@@ -5268,5 +5285,8 @@ class PlaybackService : MediaLibraryService() {
          * before the same track is asked for again.
          */
         const val RECOVERY_DELAY_MS = 350L
+
+        /** iTunes preview clips are ~30 seconds; clamp seeks when entering SHORTS. */
+        const val SHORTS_PREVIEW_MAX_POSITION_MS = 29_000L
     }
 }
