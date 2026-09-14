@@ -44,14 +44,22 @@ android {
         // Haze falls back to a translucent scrim below that.
         minSdk = 26
         targetSdk = 36
-        versionCode = 14
-        versionName = "1.5.2"
+        versionCode = 15
+        versionName = "1.5.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Last.fm credentials are supplied locally and never committed.
         buildConfigField("String", "LASTFM_API_KEY", "\"${lastfmApiKey.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
         buildConfigField("String", "LASTFM_SECRET", "\"${lastfmSecret.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
+        // Short git hash baked in so Settings can show exactly which build is installed.
+        val gitCommit: String = runCatching {
+            val proc = ProcessBuilder("git", "rev-parse", "--short", "HEAD")
+                .redirectErrorStream(true)
+                .start()
+            proc.inputStream.bufferedReader().readText().trim().take(7)
+        }.getOrDefault("dev").ifBlank { "dev" }
+        buildConfigField("String", "GIT_COMMIT", "\"$gitCommit\"")
     }
 
     splits {

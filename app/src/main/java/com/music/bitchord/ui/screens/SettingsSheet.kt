@@ -136,6 +136,7 @@ import com.music.bitchord.data.settings.DownloadQuality
 import com.music.bitchord.data.settings.ThemeMode
 import com.music.bitchord.data.settings.PlaybackMode
 import com.music.bitchord.data.stats.Backup
+import com.music.bitchord.BuildConfig
 import com.music.bitchord.playback.AudioCache
 import com.music.bitchord.ui.player.fullBleedArtworkAvailable
 import kotlinx.coroutines.launch
@@ -757,7 +758,7 @@ fun SettingsScreen(
 
         Text(
             text = buildAnnotatedString {
-                append("UvyTunes $version  ")
+                append("UvyTunes $version (${BuildConfig.GIT_COMMIT})  ")
                 val linkStyles = TextLinkStyles(
                     style = SpanStyle(
                         color = MaterialTheme.colorScheme.primary,
