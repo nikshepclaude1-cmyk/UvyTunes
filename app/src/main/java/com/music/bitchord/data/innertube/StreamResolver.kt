@@ -721,27 +721,26 @@ object StreamResolver {
                 val responses = mutableMapOf<PlayerClient, JsonObject>()
                 playerStream(
                     videoId,
-                    { response -> pickOpus(response, maxKbps).also { if (it.isNotEmpty()) offered = true } },
+                    { response -> pickM4a(response, maxKbps).also { if (it.isNotEmpty()) offered = true } },
                     responses,
                 )?.let { return@withContext it }
             }
 
             // Not "try again later" — every client being refused at once is a state
             // that lasts hours, and it is precisely the state [resolve] extracts its
-            // way out of. Still asking for Opus, because this is still a download:
-            // the failsafe is a different route to the bytes, not a licence to
-            // fetch a container that cannot then be saved.
-            TrackLog.w(TAG, "no client minted a usable Opus URL for $videoId; extracting")
+            // way out of. Still asking for AAC/MP4, because this is a download and
+            // Android's MediaStore rejects audio/webm.
+            TrackLog.w(TAG, "no client minted a usable AAC URL for $videoId; extracting")
             runCatching {
                 newPipeStream(videoId) { candidates ->
-                    // Capped the same way [pickOpus] is, off the same setting, or
+                    // Capped the same way [pickM4a] is, off the same setting, or
                     // the failsafe would quietly hand back a rendition the user
                     // said they didn't want to keep.
-                    underCeiling(candidates.filter { it.second.isWebmOpus }, maxKbps)
+                    underCeiling(candidates.filter { it.second.isM4a }, maxKbps)
                         ?.also { offered = true }
                 }
             }.onSuccess { return@withContext it }
-                .onFailure { TrackLog.w(TAG, "extraction found no Opus for $videoId: ${it.message}") }
+                .onFailure { TrackLog.w(TAG, "extraction found no AAC for $videoId: ${it.message}") }
 
             if (offered) error("Couldn't reach a downloadable copy just now — try again")
             error("No downloadable audio for this track")
@@ -1051,6 +1050,10 @@ object StreamResolver {
      */
     private fun pickOpus(response: JsonObject, maxKbps: Int): List<Audio> =
         rankByQuality(audioFormats(response).filter { it.isOpus }, maxKbps)
+
+    /** Pick AAC/MP4 formats for downloads — Android's MediaStore rejects audio/webm. */
+    private fun pickM4a(response: JsonObject, maxKbps: Int): List<Audio> =
+        rankByQuality(audioFormats(response).filter { it.isAac }, maxKbps)
 
     private fun JsonObject.str(key: String): String? = this[key]?.jsonPrimitive?.content
 

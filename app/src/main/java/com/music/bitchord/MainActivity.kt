@@ -54,6 +54,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Sort
 import androidx.compose.material.icons.rounded.Upgrade
@@ -197,6 +198,8 @@ import com.music.bitchord.ui.screens.HomeScreen
 import com.music.bitchord.ui.screens.LibraryGridPage
 import com.music.bitchord.ui.screens.LibraryScreen
 import com.music.bitchord.ui.screens.MoodGenrePlaylistsScreen
+import com.music.bitchord.ui.screens.PodcastDetailScreen
+import com.music.bitchord.ui.screens.PodcastsScreen
 import com.music.bitchord.ui.screens.SearchScreen
 import com.music.bitchord.ui.screens.SongSort
 import com.music.bitchord.ui.replay.ReplayScreen
@@ -394,6 +397,13 @@ private fun BitChordApp(
     var showAccountScrobbling by remember { mutableStateOf(false) }
     var showSources by remember { mutableStateOf(false) }
     var showSpotifyCanvasAuth by remember { mutableStateOf(false) }
+    
+    // Podcast detail navigation
+    var showPodcastDetail by remember { mutableStateOf(false) }
+    var podcastDetailTitle by remember { mutableStateOf("") }
+    var podcastDetailFeedUrl by remember { mutableStateOf("") }
+    var podcastDetailArtwork by remember { mutableStateOf<String?>(null) }
+    var podcastDetailItunesId by remember { mutableStateOf<String?>(null) }
     
     // Hosted here rather than inside SourcesScreen so its frosted card has
     // something to blur: that screen is drawn inside the `hazeSource` subtree,
@@ -717,12 +727,14 @@ private fun BitChordApp(
     val playLabel = stringResource(R.string.play)
     val exploreLabel = stringResource(R.string.explore)
     val libraryLabel = stringResource(R.string.library)
+    val podcastsLabel = "Podcasts"
     val searchLabel = stringResource(R.string.search)
-    val tabs = remember(playLabel, exploreLabel, libraryLabel, searchLabel) {
+    val tabs = remember(playLabel, exploreLabel, libraryLabel, podcastsLabel, searchLabel) {
         listOf(
             BottomTab(playLabel, BitChordIcons.Play),
             BottomTab(exploreLabel, BitChordIcons.Explore),
             BottomTab(libraryLabel, BitChordIcons.Library),
+            BottomTab(podcastsLabel, Icons.Rounded.Mic),
             BottomTab(searchLabel, BitChordIcons.Search),
         )
     }
@@ -2070,6 +2082,16 @@ private fun BitChordApp(
                             pullState = explorePull,
                             contentPadding = listPadding,
                         )
+                        TAB_PODCASTS -> PodcastsScreen(
+                            onOpenPodcast = { title, url, artwork, itunesId ->
+                                // Store the podcast info and show detail screen
+                                podcastDetailTitle = title
+                                podcastDetailFeedUrl = url
+                                podcastDetailArtwork = artwork
+                                podcastDetailItunesId = itunesId
+                                showPodcastDetail = true
+                            },
+                        )
                         TAB_SEARCH -> SearchScreen(
                             query = query,
                             onQueryChange = viewModel::onQueryChange,
@@ -3188,6 +3210,28 @@ private fun BitChordApp(
             )
         }
 
+        if (showPodcastDetail) {
+            BackHandler { showPodcastDetail = false }
+            PodcastDetailScreen(
+                title = podcastDetailTitle,
+                feedUrl = podcastDetailFeedUrl,
+                artworkUrl = podcastDetailArtwork,
+                itunesId = podcastDetailItunesId,
+                onBack = { showPodcastDetail = false },
+                onPlayEpisode = { episode ->
+                    // Play the podcast episode through the player
+                    val song = Song(
+                        videoId = episode.audioUrl,
+                        title = episode.title,
+                        artist = podcastDetailTitle,
+                        thumbnailUrl = episode.imageUrl.ifBlank { podcastDetailArtwork },
+                    )
+                    playRadio(song)
+                    if (!playerDocked) showNowPlaying = true
+                },
+            )
+        }
+
         discordDialog?.let { which ->
             DiscordDialogHost(
                 which = which,
@@ -3353,7 +3397,8 @@ private val DETAIL_TITLE_DROP = 320.dp
 private const val TAB_HOME = 0
 private const val TAB_EXPLORE = 1
 private const val TAB_LIBRARY = 2
-private const val TAB_SEARCH = 3
+private const val TAB_PODCASTS = 3
+private const val TAB_SEARCH = 4
 
 /**
  * What a tab's key is prefixed with in the content switcher above.

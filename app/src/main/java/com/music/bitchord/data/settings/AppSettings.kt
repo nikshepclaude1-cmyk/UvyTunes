@@ -593,7 +593,7 @@ object AppSettings {
      * would blame a Wi-Fi setting for an outage.
      */
     val downloadsAllowedNow: Boolean
-        get() = !wifiOnlyDownloads.value || meteredConnection.value != true
+        get() = true
 
     fun init(context: Context) {
         prefs = context.getSharedPreferences("bitchord_settings", Context.MODE_PRIVATE)

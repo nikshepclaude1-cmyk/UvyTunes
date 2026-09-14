@@ -417,6 +417,9 @@ fun Song.toMediaItem(): MediaItem {
         ?: Downloads.verifiedSavedUri(videoId)
     val uriString = offlineUri ?: when {
         videoId.startsWith("content://") || videoId.startsWith("file://") -> videoId
+        // Direct HTTP/HTTPS URLs (podcast episodes, direct audio links) — pass through
+        // unchanged so ExoPlayer's DefaultMediaSourceFactory handles them natively.
+        videoId.startsWith("http://") || videoId.startsWith("https://") -> videoId
         // Title, artist and runtime ride along in the URI because they are what
         // a cross-source match is made on, and the resolver runs on ExoPlayer's
         // loader thread with nothing but a DataSpec in hand — see
@@ -464,7 +467,13 @@ fun Song.toMediaItem(): MediaItem {
             // System media surfaces (One UI's Now Bar, Android Auto, Assistant)
             // classify a session by its media type; untyped sessions get treated
             // as generic audio and lose the music-specific card.
-            .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
+            .setMediaType(
+                if (videoId.startsWith("http://") || videoId.startsWith("https://")) {
+                    MediaMetadata.MEDIA_TYPE_PODCAST
+                } else {
+                    MediaMetadata.MEDIA_TYPE_MUSIC
+                }
+            )
             .setIsPlayable(true)
             .setIsBrowsable(false)
             // What a queue entry has to carry about itself: which section of
