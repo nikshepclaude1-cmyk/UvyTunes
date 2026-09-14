@@ -86,6 +86,7 @@ fun LibraryScreen(
     onShelfItemClick: (ShelfItem) -> Unit,
     onShelfItemLongPress: (ShelfItem) -> Unit,
     onNewPlaylist: () -> Unit,
+    onImport: () -> Unit,
     /**
      * A shelf's "Show all" — every shelf's row here stops at five cards (see
      * [LibraryGridShelf]), so this is the only way to reach whatever didn't
@@ -227,6 +228,7 @@ fun LibraryScreen(
                                 onItemClick = onShelfItemClick,
                                 onItemLongPress = onShelfItemLongPress,
                                 onNewPlaylist = onNewPlaylist,
+                                onImport = onImport,
                                 onShowAll = { onShowAll(emptyPlaylists) },
                             )
                         }
@@ -240,6 +242,7 @@ fun LibraryScreen(
                                     onItemClick = onShelfItemClick,
                                     onItemLongPress = onShelfItemLongPress,
                                     onNewPlaylist = onNewPlaylist,
+                                    onImport = onImport,
                                     onShowAll = { onShowAll(pinnedFirst) },
                                     pinnedPlaylists = pinnedPlaylists,
                                 )
@@ -368,6 +371,7 @@ private fun PlaylistShelf(
     onItemClick: (ShelfItem) -> Unit,
     onItemLongPress: (ShelfItem) -> Unit,
     onNewPlaylist: () -> Unit,
+    onImport: () -> Unit,
     onShowAll: () -> Unit,
     pinnedPlaylists: List<String> = emptyList(),
 ) {
@@ -378,12 +382,21 @@ private fun PlaylistShelf(
         onShowAll = onShowAll,
         pinnedPlaylists = pinnedPlaylists,
         leadingCard = {
-            NewShelfCard(
-                icon = BitChordIcons.Plus,
-                label = stringResource(R.string.new_playlist),
-                subtitle = stringResource(R.string.saved_to_youtube_music),
-                onClick = onNewPlaylist,
-            )
+            Row {
+                NewShelfCard(
+                    icon = BitChordIcons.Plus,
+                    label = stringResource(R.string.new_playlist),
+                    subtitle = stringResource(R.string.saved_to_youtube_music),
+                    onClick = onNewPlaylist,
+                )
+                Spacer(Modifier.width(8.dp))
+                NewShelfCard(
+                    icon = BitChordIcons.Download,
+                    label = "Import",
+                    subtitle = "Spotify / JioSaavn",
+                    onClick = onImport,
+                )
+            }
         },
     )
 }

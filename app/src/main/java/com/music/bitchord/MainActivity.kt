@@ -428,6 +428,7 @@ private fun BitChordApp(
     var discordDialog by remember { mutableStateOf<DiscordDialog?>(null) }
     var songActions by remember { mutableStateOf<Song?>(null) }
     var showSongPoster by remember { mutableStateOf(false) }
+    var showImportPlaylist by remember { mutableStateOf(false) }
     /**
      * Whether the track menu that is up was opened from the player.
      *
@@ -1612,6 +1613,7 @@ private fun BitChordApp(
             showSources = false
         }
         BackHandler(enabled = showSongPoster) { showSongPoster = false }
+        BackHandler(enabled = showImportPlaylist) { showImportPlaylist = false }
         // One back step out of Settings, or out of any tab but Home, lands on
         // Home rather than exiting — only Home itself hands back to the system,
         // which is what actually closes/minimizes the app.
@@ -2147,6 +2149,7 @@ private fun BitChordApp(
                             // does nothing; see [onBrowseLongPress].
                             onShelfItemLongPress = onBrowseLongPress,
                             onNewPlaylist = { creatingPlaylist = true },
+                            onImport = { showImportPlaylist = true },
                             onShowAll = { shelf -> libraryShowAll = shelf },
                             replayCard = replayCards.firstOrNull(),
                             onOpenReplay = { showReplay = true },
@@ -2759,6 +2762,22 @@ private fun BitChordApp(
                         onDismiss = { showSongPoster = false },
                     )
                 }
+            }
+        }
+
+        // ---- Import external playlist ----
+        if (showImportPlaylist) {
+            ModalBottomSheet(
+                onDismissRequest = { showImportPlaylist = false },
+                containerColor = MaterialTheme.colorScheme.background,
+            ) {
+                ImportPlaylistSheet(
+                    onImport = { name, queries ->
+                        viewModel.importExternalPlaylist(name, queries)
+                        showImportPlaylist = false
+                    },
+                    onDismiss = { showImportPlaylist = false },
+                )
             }
         }
 

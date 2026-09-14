@@ -771,6 +771,64 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
+     * Imports a playlist from Spotify/JioSaavn: creates a new YouTube Music
+     * playlist with [name] and searches for each track to add it.
+     *
+     * [trackQueries] is a list of (title, artist) pairs from the external
+     * playlist. Each is searched on YouTube Music and the best match is added.
+     */
+    fun importExternalPlaylist(name: String, trackQueries: List<Pair<String, String>>) {
+        if (!requireSignIn()) return
+        viewModelScope.launch {
+            // Step 1: Create the playlist
+            YtMusicRepository.createPlaylist(
+                title = name,
+                privacy = PlaylistPrivacy.PRIVATE,
+                videoIds = emptyList(),
+            ).fold(
+                onSuccess = { playlistId ->
+                    setPlaylistOwned("VL$playlistId", true)
+                    libraryStale = true
+                    val created = UserPlaylist(
+                        playlistId = playlistId,
+                        title = name,
+                        subtitle = "${trackQueries.size} songs",
+                        thumbnailUrl = null,
+                    )
+                    _playlists.value = listOf(created) +
+                        _playlists.value.filterNot { it.playlistId == created.playlistId }
+                    editPlaylistShelf { items ->
+                        listOf(
+                            ShelfItem(
+                                title = created.title,
+                                subtitle = created.subtitle,
+                                thumbnailUrl = created.thumbnailUrl,
+                                videoId = null,
+                                browseId = created.browseId,
+                            ),
+                        ) + items.filterNot { it.browseId == created.browseId }
+                    }
+                    // Step 2: Search and add each track
+                    val videoIds = mutableListOf<String>()
+                    for ((title, artist) in trackQueries) {
+                        val query = "$title $artist"
+                        YtMusicRepository.search(query, SearchFilter.SONGS).onSuccess { results ->
+                            val first = results.firstOrNull()
+                            if (first is SearchResult.SongRow) {
+                                videoIds.add(first.song.videoId)
+                            }
+                        }
+                    }
+                    if (videoIds.isNotEmpty()) {
+                        YtMusicRepository.addToPlaylist(playlistId, videoIds)
+                    }
+                },
+                onFailure = {},
+            )
+        }
+    }
+
+    /**
      * Drops [song] from the playlist page it is being read on, and takes the
      * row out from under the reader rather than waiting for a re-fetch.
      */
