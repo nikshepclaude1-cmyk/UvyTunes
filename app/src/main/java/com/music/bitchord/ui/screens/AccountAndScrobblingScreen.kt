@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.SwitchAccount
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.AlertDialog

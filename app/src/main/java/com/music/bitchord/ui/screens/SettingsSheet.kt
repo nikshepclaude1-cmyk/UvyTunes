@@ -204,8 +204,6 @@ fun SettingsScreen(
     val cacheLimitBytes by AppSettings.audioCacheLimitBytes.collectAsStateWithLifecycle()
     val downloadQuality by AppSettings.downloadQuality.collectAsStateWithLifecycle()
     val playbackMode by AppSettings.playbackMode.collectAsStateWithLifecycle()
-    val animatedCanvas by AppSettings.animatedCanvas.collectAsStateWithLifecycle()
-    val canvasOverCellular by AppSettings.canvasOverCellular.collectAsStateWithLifecycle()
     val wifiOnlyDownloads by AppSettings.wifiOnlyDownloads.collectAsStateWithLifecycle()
     val exportDownloads by AppSettings.exportDownloads.collectAsStateWithLifecycle()
     val stopOnTaskRemoved by AppSettings.stopOnTaskRemoved.collectAsStateWithLifecycle()

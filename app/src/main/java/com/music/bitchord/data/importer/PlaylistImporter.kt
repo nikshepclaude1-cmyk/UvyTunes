@@ -7,6 +7,7 @@ import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.parameter
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
@@ -81,7 +82,7 @@ object PlaylistImporter {
     suspend fun spotifyPlaylistName(playlistId: String): String? = runCatching {
         val response = client.get("https://open.spotify.com/oembed") {
             header("User-Agent", "Mozilla/5.0")
-            io.ktor.client.request.parameter("url", "https://open.spotify.com/playlist/$playlistId")
+            parameter("url", "https://open.spotify.com/playlist/$playlistId")
         }
         if (response.status != HttpStatusCode.OK) return@runCatching null
         val body = json.decodeFromString<SpotifyOEmbed>(response.bodyAsText())
@@ -115,12 +116,12 @@ object PlaylistImporter {
         val response = client.get("https://www.jiosaavn.com/api.php") {
             header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
             header("X-Forwarded-For", "49.36.0.1")
-            io.ktor.client.request.parameter("__call", "playlist.getDetails")
-            io.ktor.client.request.parameter("_format", "json")
-            io.ktor.client.request.parameter("_marker", "0")
-            io.ktor.client.request.parameter("api_version", "4")
-            io.ktor.client.request.parameter("ctx", "android")
-            io.ktor.client.request.parameter("pids", playlistId)
+            parameter("__call", "playlist.getDetails")
+            parameter("_format", "json")
+            parameter("_marker", "0")
+            parameter("api_version", "4")
+            parameter("ctx", "android")
+            parameter("pids", playlistId)
         }
 
         if (response.status != HttpStatusCode.OK) {

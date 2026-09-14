@@ -126,6 +126,7 @@ import com.music.bitchord.ui.screens.DiscordDialog
 import com.music.bitchord.ui.screens.DiscordDialogHost
 import com.music.bitchord.ui.screens.DiscordScreen
 import com.music.bitchord.ui.screens.HistoryScreen
+import com.music.bitchord.ui.screens.ImportPlaylistSheet
 import com.music.bitchord.ui.screens.SettingsScreen
 import com.music.bitchord.ui.screens.SourceEditorAlert
 import com.music.bitchord.ui.screens.SourcesScreen
@@ -2773,7 +2774,7 @@ private fun BitChordApp(
 
         // ---- Song poster share ----
         if (showSongPoster) {
-            val posterSong = songActions ?: song
+            val posterSong = songActions
             if (posterSong != null) {
                 ModalBottomSheet(
                     onDismissRequest = { showSongPoster = false },

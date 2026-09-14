@@ -814,7 +814,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         val query = "$title $artist"
                         YtMusicRepository.search(query, SearchFilter.SONGS).onSuccess { results ->
                             val first = results.firstOrNull()
-                            if (first is SearchResult.SongRow) {
+                            if (first is SearchResult.Track) {
                                 videoIds.add(first.song.videoId)
                             }
                         }
