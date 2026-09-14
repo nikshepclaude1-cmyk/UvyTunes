@@ -202,6 +202,7 @@ import com.music.bitchord.ui.screens.SongSort
 import com.music.bitchord.ui.replay.ReplayScreen
 import com.music.bitchord.ui.replay.cards
 import com.music.bitchord.ui.replay.ReplayShareSheet
+import com.music.bitchord.ui.share.SongShareSheet
 import com.music.bitchord.ui.replay.ReplayStories
 import com.music.bitchord.ui.replay.ReplayStoryPage
 import com.music.bitchord.ui.replay.rememberReplayState
@@ -426,6 +427,7 @@ private fun BitChordApp(
     var showDiscordLogin by remember { mutableStateOf(false) }
     var discordDialog by remember { mutableStateOf<DiscordDialog?>(null) }
     var songActions by remember { mutableStateOf<Song?>(null) }
+    var showSongPoster by remember { mutableStateOf(false) }
     /**
      * Whether the track menu that is up was opened from the player.
      *
@@ -1609,6 +1611,7 @@ private fun BitChordApp(
         BackHandler(enabled = showSources) {
             showSources = false
         }
+        BackHandler(enabled = showSongPoster) { showSongPoster = false }
         // One back step out of Settings, or out of any tab but Home, lands on
         // Home rather than exiting — only Home itself hands back to the system,
         // which is what actually closes/minimizes the app.
@@ -2690,6 +2693,12 @@ private fun BitChordApp(
                     // drops it for a local file via `isOffline`, this catches
                     // the rest.
                     onShare = share.takeIf { song.videoId.isNotBlank() },
+                    onSharePoster = if (song.videoId.isNotBlank() && song.localUri == null) {
+                        {
+                            songActions = null
+                            showSongPoster = true
+                        }
+                    } else null,
                     onCopyLog = if (fromPlayer) {
                         {
                             songActions = null
@@ -2734,6 +2743,22 @@ private fun BitChordApp(
                 containerColor = MaterialTheme.colorScheme.background,
             ) {
                 DownloadManagerSheet(onDismiss = closeDownloadManager)
+            }
+        }
+
+        // ---- Song poster share ----
+        if (showSongPoster) {
+            val posterSong = songActions ?: song
+            if (posterSong != null) {
+                ModalBottomSheet(
+                    onDismissRequest = { showSongPoster = false },
+                    containerColor = MaterialTheme.colorScheme.background,
+                ) {
+                    SongShareSheet(
+                        song = posterSong,
+                        onDismiss = { showSongPoster = false },
+                    )
+                }
             }
         }
 

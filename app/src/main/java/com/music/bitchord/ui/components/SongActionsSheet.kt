@@ -41,6 +41,7 @@ import androidx.compose.material.icons.rounded.HighQuality
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.PlaylistRemove
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.ThumbDown
 import androidx.compose.material.icons.rounded.ThumbDownOffAlt
@@ -146,6 +147,7 @@ fun SongActionsSheet(
      */
     onUpgradeQuality: (() -> Unit)? = null,
     onShare: (() -> Unit)? = null,
+    onSharePoster: (() -> Unit)? = null,
     /**
      * Copies what the app logged while starting this track. Null everywhere
      * except the player, where "this track" means something.
@@ -298,6 +300,9 @@ fun SongActionsSheet(
             ) { pickingSleepTimer = true }
         }
         if (!isOffline) {
+            onSharePoster?.let {
+                ActionRow(Icons.Rounded.Image, "Share as poster", accent = palette.accent, onClick = it)
+            }
             onShare?.let {
                 ActionRow(Icons.Rounded.Share, stringResource(R.string.share), accent = palette.accent, onClick = it)
             }
