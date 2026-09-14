@@ -1814,9 +1814,12 @@ class PlaybackService : MediaLibraryService() {
 
         // Cancel any in-flight restream so only the latest mode wins.
         restreamJob?.cancel()
+        // Discard old cache bytes in the background — not a prerequisite for
+        // the restream, just cleanup. Running it in parallel with the main-
+        // thread replaceMediaItem avoids blocking the transition on IO.
+        scope.launch(Dispatchers.IO) { AudioCache.discard(uri) }
+        AudioCache.cancel()
         restreamJob = scope.launch {
-            AudioCache.cancel()
-            withContext(Dispatchers.IO) { AudioCache.discard(uri) }
             withContext(Dispatchers.Main) {
                 if (player.currentMediaItemIndex != index ||
                     player.currentMediaItem?.mediaId != mediaId

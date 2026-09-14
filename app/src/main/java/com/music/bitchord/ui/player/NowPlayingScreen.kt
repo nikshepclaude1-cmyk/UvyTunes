@@ -2155,34 +2155,77 @@ fun NowPlayingScreen(
             val transitionWindow by AppSettings.smartTransitionWindow.collectAsStateWithLifecycle()
             // SHORTS / MAX mode toggle — restream is handled in PlaybackService.
             val playbackMode by AppSettings.playbackMode.collectAsStateWithLifecycle()
-            Row(
+            val isMax = playbackMode == PlaybackMode.MAX
+            val pillOffset by animateDpAsState(
+                targetValue = if (isMax) 112.dp else 4.dp,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+                label = "modePill",
+            )
+            val pillColor by animateColorAsState(
+                targetValue = MaterialTheme.colorScheme.primary,
+                animationSpec = tween(160),
+                label = "modePillColor",
+            )
+            val labelColor by animateColorAsState(
+                targetValue = if (isMax) Color.White else MaterialTheme.colorScheme.primary,
+                animationSpec = tween(160),
+                label = "modeLabelColor",
+            )
+            val unselectedLabelColor by animateColorAsState(
+                targetValue = Color.White.copy(alpha = 0.5f),
+                animationSpec = tween(160),
+                label = "modeUnselectedLabel",
+            )
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 32.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
+                contentAlignment = Alignment.Center,
             ) {
-                listOf(
-                    PlaybackMode.SHORTS to "SHORTS",
-                    PlaybackMode.MAX to "MAX",
-                ).forEach { (mode, label) ->
-                    val selected = playbackMode == mode
+                Box(
+                    modifier = Modifier
+                        .width(224.dp)
+                        .height(32.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                        .padding(2.dp),
+                ) {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(
-                                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
-                                else Color.Transparent,
+                            .offset(x = pillOffset)
+                            .width(108.dp)
+                            .height(28.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(pillColor)
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .width(224.dp)
+                        .height(32.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    listOf(
+                        PlaybackMode.SHORTS to "SHORTS",
+                        PlaybackMode.MAX to "MAX",
+                    ).forEach { (mode, label) ->
+                        val selected = playbackMode == mode
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clickable { AppSettings.setPlaybackMode(mode) }
+                                .padding(horizontal = 8.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (selected) labelColor else unselectedLabelColor,
                             )
-                            .clickable { AppSettings.setPlaybackMode(mode) }
-                            .padding(horizontal = 16.dp, vertical = 4.dp),
-                    ) {
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (selected) MaterialTheme.colorScheme.primary
-                            else Color.White.copy(alpha = 0.5f),
-                        )
+                        }
                     }
                 }
             }
