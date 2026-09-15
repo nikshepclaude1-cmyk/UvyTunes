@@ -102,7 +102,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.automirrored.rounded.VolumeDown
-import androidx.compose.material.icons.automirrored.rounded.Share
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.Close
@@ -3021,7 +3021,7 @@ fun NowPlayingScreen(
                                 enabled = translateShown && !lyrics.isNullOrEmpty(),
                             ) {
                                 androidx.compose.material3.Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.Share,
+                                    imageVector = Icons.Rounded.Share,
                                     contentDescription = "Share lyrics",
                                     tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                 )

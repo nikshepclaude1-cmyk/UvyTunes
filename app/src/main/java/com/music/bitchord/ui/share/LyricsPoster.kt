@@ -11,6 +11,7 @@ import android.graphics.Shader
 import android.graphics.Typeface
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.ColorUtils
+import androidx.palette.graphics.Palette
 import com.music.bitchord.R
 import com.music.bitchord.data.lyrics.LyricLine
 import com.music.bitchord.data.model.Song
@@ -224,10 +225,10 @@ private fun ellipsised(text: String, paint: Paint, width: Float): String {
 private fun paletteOf(bitmap: Bitmap?): List<Int> {
     val fallback = listOf(0xFF3A1C71.toInt(), 0xFFD76D77.toInt(), 0xFF2B5876.toInt(), 0xFFFFAF7B.toInt())
     val source = bitmap ?: return fallback
-    val swatches = runCatching {
-        android.graphics.Palette.from(source).maximumColorCount(24).generate().swatches
-            ?.sortedByDescending { sw -> sw.population }
-            ?.map { sw -> sw.rgb }
+    val swatches: List<Int> = runCatching {
+        Palette.from(source).maximumColorCount(24).generate().swatches
+            ?.sortedByDescending { sw: Palette.Swatch -> sw.population }
+            ?.map { sw: Palette.Swatch -> sw.rgb }
             ?: emptyList()
     }.getOrDefault(emptyList())
     if (swatches.isEmpty()) return fallback
