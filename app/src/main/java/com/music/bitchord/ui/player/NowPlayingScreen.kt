@@ -3020,7 +3020,7 @@ fun NowPlayingScreen(
                                 enabled = translateShown && !lyrics.isNullOrEmpty(),
                             ) {
                                 androidx.compose.material3.Icon(
-                                    imageVector = androidx.compose.material.icons.Icons.Rounded.Share,
+                                    imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Rounded.Share,
                                     contentDescription = "Share lyrics",
                                     tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                 )

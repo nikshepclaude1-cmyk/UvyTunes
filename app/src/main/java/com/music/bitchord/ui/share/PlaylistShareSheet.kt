@@ -4,7 +4,13 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.Shader
+import android.graphics.BitmapShader
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Build
 import android.os.Environment

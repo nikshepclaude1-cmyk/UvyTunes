@@ -247,23 +247,3 @@ private fun dimmed(color: Int): Int {
     hsl[2] = 0.10f
     return ColorUtils.HSLToColor(hsl)
 }
-
-private class Fonts(context: Context) {
-    private val heavy = font(context, R.font.sf_pro_display_heavy) ?: Typeface.DEFAULT_BOLD
-    private val semibold = font(context, R.font.sf_pro_display_semibold) ?: Typeface.DEFAULT_BOLD
-    private val regular = font(context, R.font.sf_pro_display_regular) ?: Typeface.DEFAULT
-
-    fun heading(size: Float, color: Int) = paint(heavy, size, color)
-    fun body(size: Float, color: Int, bold: Boolean = false) =
-        paint(if (bold) semibold else regular, size, color)
-
-    private fun paint(face: Typeface, size: Float, color: Int) =
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            typeface = face
-            textSize = size
-            this.color = color
-        }
-
-    private fun font(context: Context, id: Int): Typeface? =
-        runCatching { ResourcesCompat.getFont(context, id) }.getOrNull()
-}

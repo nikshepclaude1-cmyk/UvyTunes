@@ -213,7 +213,7 @@ private fun ellipsised(text: String, paint: Paint, width: Float): String {
 
 // ── Fonts ────────────────────────────────────────────────────────────────────
 
-private class Fonts(context: Context) {
+internal class Fonts(context: Context) {
     private val heavy = font(context, R.font.sf_pro_display_heavy) ?: Typeface.DEFAULT_BOLD
     private val semibold = font(context, R.font.sf_pro_display_semibold) ?: Typeface.DEFAULT_BOLD
     private val regular = font(context, R.font.sf_pro_display_regular) ?: Typeface.DEFAULT
@@ -233,7 +233,7 @@ private class Fonts(context: Context) {
         runCatching { ResourcesCompat.getFont(context, id) }.getOrNull()
 }
 
-private suspend fun loadBitmap(context: Context, url: String): Bitmap? = runCatching {
+internal suspend fun loadBitmap(context: Context, url: String): Bitmap? = runCatching {
     val request = ImageRequest.Builder(context)
         .data(url.artworkAt(POSTER_COVER_PX))
         .allowHardware(false)
@@ -241,11 +241,11 @@ private suspend fun loadBitmap(context: Context, url: String): Bitmap? = runCatc
     (SingletonImageLoader.get(context).execute(request) as? SuccessResult)?.image?.toBitmap()
 }.getOrNull()
 
-private const val POSTER_W = 1080
-private const val POSTER_H = 1920
+internal const val POSTER_W = 1080
+internal const val POSTER_H = 1920
 private const val POSTER_COVER_PX = 1080
 
 private const val MARGIN = 72f
-private const val LOGO_W = 66f
-private const val LOGO_H = 44f
-private const val LOGO_GAP = 20f
+internal const val LOGO_W = 66f
+internal const val LOGO_H = 44f
+internal const val LOGO_GAP = 20f
