@@ -3730,7 +3730,7 @@ private fun BitChordApp(
                         artist = podcastDetailTitle,
                         thumbnailUrl = episode.imageUrl.ifBlank { podcastDetailArtwork },
                     )
-                    playRadio(song)
+                    playRadio(song, QueueSource("Podcast", PlaybackSourceType.SEARCH, episode.audioUrl))
                     if (!playerDocked) showNowPlaying = true
                 },
             )

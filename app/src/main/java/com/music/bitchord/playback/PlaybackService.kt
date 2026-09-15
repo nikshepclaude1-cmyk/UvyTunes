@@ -4459,7 +4459,6 @@ class PlaybackService : MediaLibraryService() {
         val balance = AppSettings.equalizerBalance.value
         equalizerProcessorA.setTuning(enabled, curve, balance)
         equalizerProcessorB.setTuning(enabled, curve, balance)
->>>>>>> upstream/main
     }
 
     /**
