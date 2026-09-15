@@ -74,6 +74,7 @@ fun PodcastDetailScreen(
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var isSaved by remember { mutableStateOf(false) }
+    var resolvedFeedUrl by remember { mutableStateOf(feedUrl) }
     val scope = rememberCoroutineScope()
 
     // Check if saved
@@ -81,14 +82,23 @@ fun PodcastDetailScreen(
         isSaved = itunesId?.let { PodcastLibrary.isSaved(it) } ?: false
     }
 
-    LaunchedEffect(feedUrl) {
-        if (feedUrl.isBlank()) {
+    LaunchedEffect(feedUrl, itunesId) {
+        // If feedUrl is blank but we have an itunesId, look it up
+        if (resolvedFeedUrl.isBlank() && !itunesId.isNullOrBlank()) {
+            loading = true
+            val lookup = PodcastApi.lookup(itunesId)
+            if (lookup?.feedUrl != null) {
+                resolvedFeedUrl = lookup.feedUrl
+            }
+        }
+
+        if (resolvedFeedUrl.isBlank()) {
             error = "No feed URL available"
             loading = false
             return@LaunchedEffect
         }
         try {
-            episodes = PodcastApi.fetchEpisodes(feedUrl)
+            episodes = PodcastApi.fetchEpisodes(resolvedFeedUrl)
             loading = false
         } catch (e: Exception) {
             error = "Failed to load episodes"
@@ -137,11 +147,11 @@ fun PodcastDetailScreen(
             if (itunesId != null) {
                 IconButton(onClick = {
                     val podcast = PodcastResult(
-                        itunesId = itunesId,
+                        itunesId = itunesId ?: "",
                         title = title,
                         author = "",
                         artworkUrl = artworkUrl,
-                        feedUrl = feedUrl,
+                        feedUrl = resolvedFeedUrl,
                         webUrl = null,
                         genre = null,
                         episodeCount = episodes.size,
@@ -206,7 +216,7 @@ fun PodcastDetailScreen(
                             error = null
                             retryScope.launch {
                                 try {
-                                    episodes = PodcastApi.fetchEpisodes(feedUrl)
+                                    episodes = PodcastApi.fetchEpisodes(resolvedFeedUrl)
                                     loading = false
                                 } catch (e: Exception) {
                                     error = "Failed to load episodes"
