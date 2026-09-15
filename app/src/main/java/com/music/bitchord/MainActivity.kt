@@ -205,8 +205,6 @@ import com.music.bitchord.ui.components.TopFadeBlur
 import com.music.bitchord.ui.components.topBarContentPadding
 import com.music.bitchord.ui.components.AppLanguageDialog
 import com.music.bitchord.ui.components.TranslationLanguageDialog
-import com.music.bitchord.ui.components.LyricsSourcesDialog
-import com.music.bitchord.ui.components.UpdateAvailableDialog
 import com.music.bitchord.ui.icons.BitChordIcons
 import androidx.media3.common.Player
 import com.music.bitchord.data.YtMusicRepository
@@ -493,7 +491,6 @@ private fun BitChordApp(
     var libraryShowAll by remember { mutableStateOf<HomeShelf?>(null) }
     var detailActiveShelf by remember { mutableStateOf<HomeShelf?>(null) }
     var librarySortMenuOpen by remember { mutableStateOf(false) }
-    var showLyricsSources by remember { mutableStateOf(false) }
     var showAppLanguage by remember { mutableStateOf(false) }
     var showTranslationLanguage by remember { mutableStateOf(false) }
     var showAccountSelector by remember { mutableStateOf(false) }
@@ -573,27 +570,6 @@ private fun BitChordApp(
     val homeLoadingMore by viewModel.homeLoadingMore.collectAsStateWithLifecycle()
     val homeRecentlyPlayedLoading by viewModel.homeRecentlyPlayedLoading.collectAsStateWithLifecycle()
 
-    // The top bar's icon is the quiet, always-there nudge; this is the
-    // once-per-launch popup version of the same news. `updateDialogShown`
-    // rides out configuration changes on rememberSaveable so a rotation
-    // doesn't bring it back — only a fresh launch does.
-    var updateDialogShown by rememberSaveable { mutableStateOf(false) }
-    var showUpdateDialog by remember { mutableStateOf(false) }
-    val updateAvailable by viewModel.updateAvailable.collectAsStateWithLifecycle()
-
-    /**
-     * The single gate both surfaces read, so the icon can't announce the update
-     * a beat before the popup does — they're one piece of news, and staggering
-     * them made the top bar look like it had caught something the app hadn't.
-     */
-    val updateNotice = updateAvailable
-
-    LaunchedEffect(updateNotice) {
-        if (updateNotice != null && !updateDialogShown) {
-            updateDialogShown = true
-            showUpdateDialog = true
-        }
-    }
     val query by viewModel.query.collectAsStateWithLifecycle()
     val results by viewModel.results.collectAsStateWithLifecycle()
     val exploreState by viewModel.explore.collectAsStateWithLifecycle()
@@ -873,8 +849,8 @@ private fun BitChordApp(
             BottomTab(playLabel, BitChordIcons.Play),
             BottomTab(exploreLabel, BitChordIcons.Explore),
             BottomTab(libraryLabel, BitChordIcons.Library),
-            BottomTab(podcastsLabel, Icons.Rounded.Mic),
             BottomTab(searchLabel, BitChordIcons.Search),
+            BottomTab(podcastsLabel, Icons.Rounded.Mic),
         )
     }
 
@@ -2236,7 +2212,6 @@ private fun BitChordApp(
                                 showSettings = false
                                 showReplay = true
                             },
-                            onLyricsSources = { showLyricsSources = true },
                             onTranslationLanguage = { showTranslationLanguage = true },
                             onSources = { showSources = true },
                             onListenTogether = { showListenTogether = true },
@@ -2683,26 +2658,6 @@ private fun BitChordApp(
                     },
                     modifier = Modifier.align(Alignment.TopCenter),
                     actions = {
-                        // Only worth surfacing where there's room for it and it won't
-                        // be mistaken for a per-page action — Home, at rest.
-                        if (!showSettings && !showAccountScrobbling && !showSources && !showListenTogether && !showEqualizer &&
-                            detail == null && selectedTab == TAB_HOME
-                        ) {
-                            updateNotice?.let { update ->
-                                IconButton(onClick = { showUpdateDialog = true }) {
-                                    Icon(
-                                        // An arrow rising out of a bar, not the
-                                        // little phone-with-an-arrow: at 24dp the
-                                        // handset outline is mush, and the glyph
-                                        // has to read as "newer version" rather
-                                        // than as "something about your device".
-                                        Icons.Rounded.Upgrade,
-                                        contentDescription = stringResource(R.string.update_available, update.version),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                            }
-                        }
                         if (!showSettings && !showAccountScrobbling) {
                             // Left of the account photo, and only on Library itself:
                             // a history is a record of what was played, which reads
@@ -3505,49 +3460,6 @@ private fun BitChordApp(
             }
         }
 
-        // ---- Update available (once per launch) ----
-        if (showUpdateDialog) {
-            updateNotice?.let { update ->
-                UpdateAvailableDialog(
-                    version = update.version,
-                    notes = update.notes,
-                    hazeState = hazeState,
-                    // A download in progress keeps running behind the closed
-                    // sheet — only the sheet itself goes away. The top bar's
-                    // update icon reopens it onto whatever state it reached.
-                    onDismiss = { showUpdateDialog = false },
-                    onDownload = {
-                        if (update.apkUrl != null) {
-                            scope.launch { AppUpdateChecker.downloadApk(context) }
-                        } else {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(update.releaseUrl)))
-                            showUpdateDialog = false
-                        }
-                    },
-                    onCancelDownload = {
-                        AppUpdateChecker.cancelDownload()
-                    },
-                    onInstall = {
-                        val ready = AppUpdateChecker.download.value as? AppUpdateChecker.DownloadState.Ready
-                        ready?.let { AppUpdateChecker.installApk(context, it.file) }
-                    },
-                    onOpenReleasePage = {
-                        AppUpdateChecker.resetDownload()
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(update.releaseUrl)))
-                        showUpdateDialog = false
-                    },
-                )
-            }
-        }
-
-        if (showLyricsSources) {
-            BackHandler { showLyricsSources = false }
-            LyricsSourcesDialog(
-                hazeState = hazeState,
-                onDismiss = { showLyricsSources = false },
-            )
-        }
-
         if (songSortMenuOpen) {
             BackHandler { songSortMenuOpen = false }
             FrostedSortMenu(
@@ -4013,8 +3925,8 @@ private val DETAIL_TITLE_DROP = 320.dp
 private const val TAB_HOME = 0
 private const val TAB_EXPLORE = 1
 private const val TAB_LIBRARY = 2
-private const val TAB_PODCASTS = 3
-private const val TAB_SEARCH = 4
+private const val TAB_SEARCH = 3
+private const val TAB_PODCASTS = 4
 
 /**
  * What a tab's key is prefixed with in the content switcher above.

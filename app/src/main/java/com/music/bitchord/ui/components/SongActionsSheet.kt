@@ -322,12 +322,6 @@ fun SongActionsSheet(
                 ActionRow(Icons.Rounded.Share, stringResource(R.string.share), accent = palette.accent, onClick = it)
             }
         }
-        // Last, and only from the player: it is about the track playing right
-        // now rather than about the song as a thing in a library, and it is
-        // the one row here nobody reaches for by accident.
-        onCopyLog?.let {
-            ActionRow(Icons.Rounded.BugReport, stringResource(R.string.copy_log), accent = palette.accent, onClick = it)
-        }
         Spacer(Modifier.height(24.dp))
     }
 }

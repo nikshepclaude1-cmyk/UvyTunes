@@ -1143,6 +1143,7 @@ fun NowPlayingScreen(
     LaunchedEffect(queueOpen) { if (!queueOpen) queueScrolling = false }
     val panelScrolling = lyricsScrolling || queueScrolling
     var lyricsControlsOpen by remember { mutableStateOf(false) }
+    var showLyricsShare by remember { mutableStateOf(false) }
     // Change the panel and its controls in the same snapshot. Driving the
     // controls from a LaunchedEffect left one composed frame where lyrics were
     // open but the half-player was not, so every trip into lyrics briefly
@@ -2052,6 +2053,17 @@ fun NowPlayingScreen(
             LyricsOffsetSheet(
                 hazeState = playerHaze,
                 onDismiss = onDismissLyricsOffset,
+            )
+        }
+        if (showLyricsShare && !lyrics.isNullOrEmpty()) {
+            val currentIdx = lyrics.indexOfFirst { line ->
+                line.timeMs > 0 && line.timeMs > lyricsPositionMs
+            }.coerceAtLeast(0)
+            com.music.bitchord.ui.share.LyricsShareSheet(
+                song = song,
+                lyrics = lyrics,
+                currentLineIndex = currentIdx,
+                onDismiss = { showLyricsShare = false },
             )
         }
         }
@@ -2997,6 +3009,23 @@ fun NowPlayingScreen(
                         label = "translateFade",
                     )
                     if (translateFade > 0.01f) {
+                        // Share lyrics button at the bottom-left
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .graphicsLayer { alpha = translateFade },
+                        ) {
+                            androidx.compose.material3.IconButton(
+                                onClick = { showLyricsShare = true },
+                                enabled = translateShown && !lyrics.isNullOrEmpty(),
+                            ) {
+                                androidx.compose.material3.Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Rounded.Share,
+                                    contentDescription = "Share lyrics",
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                )
+                            }
+                        }
                         Box(
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
@@ -3517,6 +3546,17 @@ fun NowPlayingScreen(
             LyricsOffsetSheet(
                 hazeState = playerHaze,
                 onDismiss = onDismissLyricsOffset,
+            )
+        }
+        if (showLyricsShare && !lyrics.isNullOrEmpty()) {
+            val currentIdx = lyrics.indexOfFirst { line ->
+                line.timeMs > 0 && line.timeMs > lyricsPositionMs
+            }.coerceAtLeast(0)
+            com.music.bitchord.ui.share.LyricsShareSheet(
+                song = song,
+                lyrics = lyrics,
+                currentLineIndex = currentIdx,
+                onDismiss = { showLyricsShare = false },
             )
         }
     }
