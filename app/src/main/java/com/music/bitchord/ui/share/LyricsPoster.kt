@@ -226,11 +226,12 @@ private fun paletteOf(bitmap: Bitmap?): List<Int> {
     val source = bitmap ?: return fallback
     val swatches = runCatching {
         android.graphics.Palette.from(source).maximumColorCount(24).generate().swatches
-            .sortedByDescending { it.population }
-            .map { it.rgb }
-    }.getOrNull().orEmpty()
+            ?.sortedByDescending { sw -> sw.population }
+            ?.map { sw -> sw.rgb }
+            ?: emptyList()
+    }.getOrDefault(emptyList())
     if (swatches.isEmpty()) return fallback
-    return (swatches + fallback).take(4).map(::tuned)
+    return (swatches + fallback).take(4).map { tuned(it) }
 }
 
 private fun tuned(color: Int): Int {
