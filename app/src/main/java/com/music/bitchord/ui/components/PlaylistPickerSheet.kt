@@ -81,7 +81,7 @@ fun PlaylistPickerSheet(
     playlists: List<UserPlaylist>,
     loading: Boolean,
     onPick: (UserPlaylist) -> Unit,
-    onCreate: (String, PlaylistPrivacy) -> Unit,
+    onCreate: (String, String, PlaylistPrivacy) -> Unit,
     modifier: Modifier = Modifier,
     song: Song? = null,
     startCreating: Boolean = false,
@@ -197,16 +197,17 @@ private fun PlaylistRow(playlist: UserPlaylist, onClick: () -> Unit) {
 }
 
 /**
- * Name and visibility, and nothing else. YouTube also takes a description,
- * which nobody fills in from a phone at the moment of saving a song.
+ * Name, description, and visibility. YouTube takes all three — the description
+ * is optional but useful for playlists the user intends to share.
  */
 @Composable
 private fun NewPlaylistForm(
     onBack: (() -> Unit)?,
-    onCreate: (String, PlaylistPrivacy) -> Unit,
+    onCreate: (String, String, PlaylistPrivacy) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
     var privacy by remember { mutableStateOf(PlaylistPrivacy.PRIVATE) }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -218,7 +219,7 @@ private fun NewPlaylistForm(
     val submit: () -> Unit = {
         if (name.isNotBlank()) {
             focusManager.clearFocus()
-            onCreate(name, privacy)
+            onCreate(name, description, privacy)
         }
     }
 
@@ -303,6 +304,53 @@ private fun NewPlaylistForm(
                         contentDescription = stringResource(R.string.clear_name),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+        }
+
+        // Description field (optional)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 22.dp, vertical = 8.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(11.dp))
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Box(Modifier.weight(1f)) {
+                if (description.isEmpty()) {
+                    Text(
+                        text = "Add an optional description",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                BasicTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    singleLine = false,
+                    maxLines = 3,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onBackground,
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            if (description.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .clickable { description = "" },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Rounded.Close,
+                        contentDescription = "Clear description",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp),
                     )
                 }
             }

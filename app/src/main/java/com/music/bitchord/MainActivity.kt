@@ -542,6 +542,11 @@ private fun BitChordApp(
     // The picker opened from the Library tab, where there is no track and
     // creating the playlist is the whole errand.
     var creatingPlaylist by remember { mutableStateOf(false) }
+    // Playlist share sheet state
+    var showPlaylistShare by remember { mutableStateOf(false) }
+    var playlistShareId by remember { mutableStateOf("") }
+    var playlistShareName by remember { mutableStateOf("") }
+    var playlistShareCover by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     // Which album or playlist the collection menu is open on, or null when it
     // is shut. One slot for every surface that can open it — the shelves on
     // three tabs, the search rows, the artist page's carousels, the release
@@ -3204,6 +3209,21 @@ private fun BitChordApp(
             }
         }
 
+        // ---- Playlist share ----
+        if (showPlaylistShare) {
+            ModalBottomSheet(
+                onDismissRequest = { showPlaylistShare = false },
+                containerColor = MaterialTheme.colorScheme.background,
+            ) {
+                com.music.bitchord.ui.share.PlaylistShareSheet(
+                    playlistId = playlistShareId,
+                    playlistName = playlistShareName,
+                    coverArt = playlistShareCover,
+                    onDismiss = { showPlaylistShare = false },
+                )
+            }
+        }
+
         // ---- Add to playlist / new playlist ----
         // One sheet for both, because they are one decision: the list of
         // playlists with a way to make another. `creatingPlaylist` opens it
@@ -3227,8 +3247,8 @@ private fun BitChordApp(
                         target?.let { viewModel.addToPlaylist(playlist, it) }
                         dismiss()
                     },
-                    onCreate = { title, privacy ->
-                        viewModel.createPlaylist(title, privacy, target)
+                    onCreate = { title, description, privacy ->
+                        viewModel.createPlaylist(title, privacy, target, description)
                         dismiss()
                     },
                 )
@@ -3338,16 +3358,20 @@ private fun BitChordApp(
                         ?.takeIf { remote && (target.type == BrowseType.ALBUM || target.type == BrowseType.PLAYLIST) }
                         ?.let { id ->
                             {
-                                val url = if (target.type == BrowseType.PLAYLIST) {
-                                    "https://music.youtube.com/playlist?list=${id.removePrefix("VL")}"
+                                if (target.type == BrowseType.PLAYLIST) {
+                                    // Show the rich share sheet with cover art + QR
+                                    playlistShareId = id.removePrefix("VL")
+                                    playlistShareName = target.title
+                                    playlistShareCover = null // Will be loaded by the sheet
+                                    showPlaylistShare = true
                                 } else {
-                                    "https://music.youtube.com/browse/$id"
+                                    val url = "https://music.youtube.com/browse/$id"
+                                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, url)
+                                    }
+                                    context.startActivity(Intent.createChooser(sendIntent, target.title))
                                 }
-                                val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, url)
-                                }
-                                context.startActivity(Intent.createChooser(sendIntent, target.title))
                                 browseActions = null
                             }
                         },

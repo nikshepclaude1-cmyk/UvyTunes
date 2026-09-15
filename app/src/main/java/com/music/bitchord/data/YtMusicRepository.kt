@@ -771,9 +771,10 @@ object YtMusicRepository {
     suspend fun createPlaylist(
         title: String,
         privacy: PlaylistPrivacy,
+        description: String? = null,
         videoIds: List<String> = emptyList(),
     ): Result<String> = call("playlist:create") {
-        Innertube.createPlaylist(title, privacy, videoIds = videoIds)
+        Innertube.createPlaylist(title, privacy, description = description, videoIds = videoIds)
     }
 
     /**

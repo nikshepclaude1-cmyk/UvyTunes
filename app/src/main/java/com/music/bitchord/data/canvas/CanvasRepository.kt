@@ -90,6 +90,7 @@ object CanvasRepository {
                 { AppleMusicCanvas.search(title, artist, album) },
                 { TidalCanvas.search(title, artist, album) },
                 { CommunityCanvas.search(title, artist, album) },
+                { JammifyCanvas.search(title, artist, album) },
                 { SpotifyCanvas.search(title, artist, album) },
             ) { it.matches(title, artist, album) }
         }
@@ -123,6 +124,7 @@ object CanvasRepository {
                 { AppleMusicCanvas.searchAlbum(name, credit) },
                 { TidalCanvas.searchAlbum(name, credit) },
                 { CommunityCanvas.searchAlbum(name, credit) },
+                { JammifyCanvas.search(name, credit, name) },
                 { SpotifyCanvas.searchAlbum(name, credit) },
                 // Album artwork names itself in both fields, so this is the
                 // same check the track path makes.
